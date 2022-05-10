@@ -1,0 +1,10 @@
+/.vscode
+/Consumer/appsettings.Development.json
+/Consumer/appsettings.json
+/Consumer/bin
+/Consumer/obj
+/Producer/appsettings.Development.json
+/Producer/appsettings.json
+/Producer/bin
+/Producer/obj
+FrontEnd.code-workspace
