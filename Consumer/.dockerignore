@@ -1,0 +1,9 @@
+**/.dockerignore
+**/.env
+**/bin
+**/compose*
+**/docker-compose*
+**/Dockerfile*
+**/obj
+**/secrets.dev.yaml
+**/values.dev.yaml
