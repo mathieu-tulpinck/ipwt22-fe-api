@@ -8,3 +8,5 @@
 /Producer/bin
 /Producer/obj
 FrontEnd.code-workspace
+.env
+docker-compose.draft.yml
