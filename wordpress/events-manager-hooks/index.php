@@ -111,16 +111,16 @@ function notify_booking_created ($count, $booking, $update) {
     return $count;
 }
 
-add_filter('em_booking_set_status','notify_booking_update', 10, 2);
+add_filter('em_booking_set_status','notify_booking_status', 10, 2);
 
-function notify_booking_update($result, $booking) {
+function notify_booking_status($result, $booking) {
     $body = array(
         'booking_id' => $booking->booking_id,
         'event_id' => $booking->event_id,
-        'person_id' => $booking->person_id, // Name, LastName, Email, VatNumber
+        'person_id' => $booking->person_id,
         'booking_spaces' => $booking->booking_spaces,
-        'booking_status' => $booking->booking_status, // InvitationStatus
-        'trigger' => 'update' // Method
+        'booking_status' => $booking->booking_status,
+        'trigger' => 'update'
     );
     $args = array('body' => $body);
     //wp_remote_post('http://httpbin/post', $args);
@@ -135,10 +135,10 @@ function notify_booking_deleted ($result, $booking) {
     $body = array(
         'booking_id' => $booking->booking_id,
         'event_id' => $booking->event_id,
-        'person_id' => $booking->person_id, // Name, LastName, Email, VatNumber
+        'person_id' => $booking->person_id,
         'booking_spaces' => $booking->booking_spaces,
-        'booking_status' => $booking->booking_status, // InvitationStatus
-        'trigger' => 'delete' // Method
+        'booking_status' => $booking->booking_status,
+        'trigger' => 'delete'
     );
     $args = array('body' => $body);
     //wp_remote_post('http://httpbin/post', $args);
