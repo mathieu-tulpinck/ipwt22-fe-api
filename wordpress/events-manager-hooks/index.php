@@ -4,121 +4,145 @@
  * Plugin Name: Events manager hooks
  */
 
-add_action('em_event_save', 'notify_event_saved', 10, 2);
+add_filter('em_event_save', 'notify_event', 10, 2);
 
-function notify_event_saved ($false, $event) {
+function notify_event($result, $event) {
     $post = get_post($event->post_id);
     $created  = strtotime($post->post_date_gmt);
     $modified = strtotime($post->post_modified_gmt);
-
-    if($created == $modified){
-        $body = array(
-            'event_id' => $event->event_id,
-            'trigger' => 'create'
-        );
-        $args = array('body' => $body);
-        //wp_remote_post('http://httpbin/post', $args);
-        wp_remote_get('http://httpbin/get', $args);
+    $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
+    $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
+    // Created
+    if ($created == $modified && $event->event_status == 1) {
+        $status = true;
+        $trigger = "create";
+        prepare_payload($event, $event_start, $event_end, $status, $trigger);
     } 
-    else {
-        $body = array(
-            'event_id' => $event->event_id,
-            'trigger' => 'update'
-        );
-        $args = array('body' => $body);
-        //wp_remote_post('http://httpbin/post', $args);
-        wp_remote_get('http://httpbin/get', $args);
+    // Place in draft
+    else if (is_null($event->event_status)) {
+        $status = false;
+        $trigger = "update";
+        prepare_payload($event, $event_start, $event_end, $status, $trigger);
     }
+
+    return $result;
 }
 
-add_action('em_booking_save', 'notify_booking_saved', 10, 2);
+add_action('em_event_save_pre', 'notify_event_update');
 
-function notify_booking_saved ($count, $booking) {
+function notify_event_update($event) {
+    $post = get_post($event->post_id);
+    $created  = strtotime($post->post_date_gmt);
+    $modified = strtotime($post->post_modified_gmt);
+    $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
+    $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
+    
+    // Update (relevant attributes only)
+    if ($created != $modified && $event->event_status == 1) {
+        $event_id = $event->event_id;
+        global $wpdb;
+        $old = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . ' WHERE event_id=%s', $event_id), ARRAY_A);
+        $master = array('event_id' => 0, 'event_owner' => 0, 'event_status' => 0, 'event_name' => 0, 'event_start' => 0, 'event_end' => 0);
+        $old_intersect = array_intersect_key($old, $master);
+        $old_intersect["event_start"] = strtotime($old_intersect["event_start"]);
+        $old_intersect["event_end"] = strtotime($old_intersect["event_end"]);
+        $event_array = json_decode(json_encode($event), true);
+        $event_array_intersect = array_intersect_key($event_array, $master);
+        $event_array_intersect["event_start"] = strtotime($event->event_start_date." ".$event->event_start_time);
+        $event_array_intersect["event_end"] = strtotime($event->event_end_date." ".$event->event_end_time);
+        $diff = array_diff($old_intersect, $event_array_intersect);
+        if (!empty(array_diff($old_intersect, $event_array_intersect))) {
+            $status = true;
+            $trigger = "update";
+            prepare_payload($event, $event_start, $event_end, $status, $trigger);
+        }
+    } 
+}
+
+add_action('wp_trash_post', 'notify_event_delete');
+
+function notify_event_delete($post_id) {
+    global $wpdb;
+    $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . ' WHERE post_id=%s', $post_id), OBJECT);
+    $event_start = strtotime($event->event_start);
+    $event_end = strtotime($event->event_end);
+    $status = false;
+    $trigger = "delete";
+    prepare_payload($event, $event_start, $event_end, $status, $trigger);
+}
+
+function prepare_payload($event, $event_start, $event_end, $status, $trigger) {
     $body = array(
-        'booking_id' => $booking->booking_id,
-        'trigger' => 'create'
+        'event_id' => $event->event_id,
+        'event_owner' => $event->event_owner, // OrganiserUuid
+        'event_status' => $status, // IsActive
+        'event_name' => $event->event_name, // Title
+        'event_start' => $event_start, // StartDateUTC
+        'event_end' => $event_end, // EndDateUTC
+        'trigger' => $trigger
     );
+
     $args = array('body' => $body);
     //wp_remote_post('http://httpbin/post', $args);
     wp_remote_get('http://httpbin/get', $args);
 }
 
-// Create hook for users. Check event insert event.
+// 0 => 'Pending',
+// 1 => Approved',
+// 2 => 'Rejected',
+// 3 => 'Cancelled',
+// 4 => 'Awaiting Online Payment',
+// 5 => 'Awaiting Payment'
+add_filter('em_booking_save', 'notify_booking_created', 10, 3);
 
-// do_action('before_delete_post', 'notify_event_deleting', 10, 2);
+function notify_booking_created ($count, $booking, $update) {
+    $body = array(
+        'booking_id' => $booking->booking_id,
+        'event_id' => $booking->event_id,
+        'person_id' => $booking->person_id, // Name, LastName, Email, VatNumber
+        'booking_spaces' => $booking->booking_spaces,
+        'booking_status' => $booking->booking_status, // InvitationStatus
+        'trigger' => 'create' // Method
+    );
+    $args = array('body' => $body);
+    //wp_remote_post('http://httpbin/post', $args);
+    wp_remote_get('http://httpbin/get', $args);
 
-// function notify_event_deleting ($postid, $post) {
-//     $event = em_get_event($postid, 'post_id');
-//     $body = array(
-//         'event_id' => $event->event_id,
-//         'trigger' => 'delete'
-//     );
-//     $args = array('body' => $body);
-//     //wp_remote_post('http://httpbin/post', $args);
-//     wp_remote_get('http://httpbin/get', $args);
+    return $count;
+}
 
-//     return $result != false;
-// }
+add_filter('em_booking_set_status','notify_booking_update', 10, 2);
 
-// add_action('em_booking_deleted', 'notify_booking_deleted', 10, 1);
+function notify_booking_update($result, $booking) {
+    $body = array(
+        'booking_id' => $booking->booking_id,
+        'event_id' => $booking->event_id,
+        'person_id' => $booking->person_id, // Name, LastName, Email, VatNumber
+        'booking_spaces' => $booking->booking_spaces,
+        'booking_status' => $booking->booking_status, // InvitationStatus
+        'trigger' => 'update' // Method
+    );
+    $args = array('body' => $body);
+    //wp_remote_post('http://httpbin/post', $args);
+    wp_remote_get('http://httpbin/get', $args);
 
-// function notify_booking_deleted ($booking) {
-//     $body = array(
-//         'booking_id' => $booking->booking_id,
-//         'trigger' => 'delete'
-//     );
-//     $args = array('body' => $body);
-//     //wp_remote_post('http://httpbin/post', $args);
-//     wp_remote_get('http://httpbin/get', $args);
-// }
+    return $result;
+}
 
- // add_action('save_post_event', 'notify_event_create', 10, 3);
+add_filter('em_booking_delete', 'notify_booking_deleted', 10, 2);
 
-// function notify_event_create ($post_ID, $post, $update) {
+function notify_booking_deleted ($result, $booking) {
+    $body = array(
+        'booking_id' => $booking->booking_id,
+        'event_id' => $booking->event_id,
+        'person_id' => $booking->person_id, // Name, LastName, Email, VatNumber
+        'booking_spaces' => $booking->booking_spaces,
+        'booking_status' => $booking->booking_status, // InvitationStatus
+        'trigger' => 'delete' // Method
+    );
+    $args = array('body' => $body);
+    //wp_remote_post('http://httpbin/post', $args);
+    wp_remote_get('http://httpbin/get', $args);
 
-//     // if ($post->post_type != 'event') {
-//     //     return;
-//     // }
-    
-//     if ($update) {
-//         return;
-//     }
-
-//     $EM_Event = new EM_Event($post_ID, 'post_id');
-//     $body = array(
-//         'event_id' => $EM_Event->event_id
-//     );
-//     $args = array('body' => $body);
-//     wp_remote_post('http://httpbin/post', $args);
-// }
-
-// add_action('publish_event', 'on_event_initial_publish', 10, 2);
-
-// function on_event_initial_publish($post_ID, $post) {
-
-//     $created  = strtotime($post->post_date_gmt);
-//     $modified = strtotime($post->post_modified_gmt);
-
-//     if($created == $modified){
-//         $EM_Event = em_get_event($post_ID, 'post_id');
-//         $body = array(
-//             'event_id' => $EM_Event->output("#_EVENTID"),
-//             // 'event_id' => $EM_Event->output("#_EVENTID"),
-//             //'trigger' => 'create'
-//         );
-//         $args = array('body' => $body);
-//         //wp_remote_post('http://httpbin/post', $args);
-//         wp_remote_get('http://httpbin/get', $args);
-//     } 
-//     else {
-//         $EM_Event = em_get_event($post_ID, 'post_id');
-//         $body = array(
-//             'event_id' => $EM_Event->event_id,
-//             //'trigger' => 'update'
-//         );
-//         $args = array('body' => $body);
-//         //wp_remote_post('http://httpbin/post', $args);
-//         wp_remote_get('http://httpbin/get', $args);
-//     }
-// }
-
+    return $result;
+}

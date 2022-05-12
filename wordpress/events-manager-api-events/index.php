@@ -22,16 +22,17 @@ function my_post_type_args($args, $post_type) {
 /**
  *  Expose the specific events data.
  */
-
 add_action('init', 'register_new_meta');
 
 function register_new_meta() {
      $args = array(
         'type' => 'string',
         'description' => '',
-        'single' => true,
+        'single' => true, // The meta key has a single value per object
         'auth_callback' => 'my_auth_callback',
         'show_in_rest' => true,
+        'show_ui' => false,
+        'show_in_menu' => false
 
     );
 
@@ -43,8 +44,7 @@ function register_new_meta() {
         }
     }
 
-    // entity_version, title, start_date, end_date, description, organiser_uuid (owner), is_active. To check in xml templates. 1 = published, null = draft, -1 = 
-    $fields = ['_event_id','_event_start_time','_event_end_time','_event_start_date','_event_end_date'];
+    $fields = ['_event_id', '_event_name', '_event_start_date', '_event_start_time', '_event_end_date', '_event_end_time', '_event_owner', '_event_status'];
 
     foreach ($fields as $key => $value)
     {
@@ -53,25 +53,10 @@ function register_new_meta() {
 }
 
 /**
- * Enables the Excerpt meta box in Page edit screen, this allows the information
- * to appear in REST.
+ * Enables the Excerpt meta box in Page edit screen, this allows the information to appear in REST.
  */
 add_action('init', 'my_add_customfields_support_for_events');
 
 function my_add_customfields_support_for_events() {
     add_post_type_support('event', 'custom-fields');
-}  
-
-
-
-/**
- * Hide the extra fields from event and post creation pages.
- */
-// add_action( 'do_meta_boxes', 'my_remove_meta_boxes' );
-
-// function my_remove_meta_boxes() {
-// 	if (! current_user_can( 'manage_options' )) {
-// 		remove_meta_box( 'postcustom', 'post', 'normal' );
-//         remove_meta_box( 'postcustom', 'event', 'normal' );
-// 	}
-// }
+}

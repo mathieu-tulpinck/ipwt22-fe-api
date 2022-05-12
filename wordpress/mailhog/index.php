@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Mailhog service
+Plugin Name: Mailhog
 */
 add_action( 'phpmailer_init', 'setup' );
 function setup( PHPMailer $phpmailer ) {
