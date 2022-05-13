@@ -8,31 +8,29 @@ services:
       MYSQL_USER: wordpress_dba
       MYSQL_PASSWORD: Student1
       MYSQL_RANDOM_ROOT_PASSWORD: '1'
-    volumes:
-      - db_data:/var/lib/mysql
     networks:
       - frontend
+    volumes:
+      - db_data:/var/lib/mysql
   phpmyadmin:
     image: phpmyadmin:latest
     environment:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: Student1
     ports:
-      - 8080:80
+      - "8090:80" # Publishes the port to docker host in order to access db from browser.
     networks:
       - frontend
   mailhog:
     image: mailhog/mailhog:latest
     ports:
-      - 8025:8025
+      - "8025:8025" # Publishes the port to docker host in order to access mailbox from browser.
     expose:
       - "1025"
     networks:
       - frontend
   httpbin:
     image: kennethreitz/httpbin:latest
-    expose:
-      - "80"
     networks:
      - frontend
     environment:
@@ -45,22 +43,62 @@ services:
       context: ./wordpress
       dockerfile: Dockerfile
     ports:
-      - 80:80
+      - "8080:80"
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: wordpress_dba
       WORDPRESS_DB_PASSWORD: Student1
       WORDPRESS_DB_NAME: wordpress
-    volumes:
-      - wordpress_data:/var/www/html
     networks:
       - frontend
+    volumes:
+      - wordpress_data:/var/www/html
+  producer:
+    depends_on:
+      - wordpress
+      # - rabbitmq
+    build:
+      context: ./Producer
+      dockerfile: Dockerfile
+    ports: # replace by expose
+      - "5002:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - frontend
+  consumer:
+    depends_on:
+      - wordpress
+      # - rabbitmq
+    build:
+      context: ./Consumer
+      dockerfile: Dockerfile
+    ports: # replace by expose
+      - "5004:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - frontend
+  # reverseproxy:
+  #   depends_on:
+  #     - producer
+  #     - consumer
+  #   build:
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8082:8082"
+  #   networks:
+  #     - frontend
+
+networks:
+  frontend:
+    name: frontend
+    driver: bridge
+  uuidmasterapi:
+    external: true
 
 volumes:
   wordpress_data:
   db_data:
-networks:
-  frontend:
-    driver: bridge
-
 
