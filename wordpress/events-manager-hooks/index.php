@@ -4,6 +4,8 @@
  * Plugin Name: Events manager hooks
  */
 
+define("PRODUCER_URL", "http://frontend-producer-1:5000/");
+
 add_filter('em_event_save', 'notify_event', 10, 2);
 
 function notify_event($result, $event) {
@@ -15,14 +17,14 @@ function notify_event($result, $event) {
     // Created
     if ($created == $modified && $event->event_status == 1) {
         $status = true;
-        $trigger = "create";
-        prepare_payload($event, $event_start, $event_end, $status, $trigger);
+        $method = 'CREATE';
+        send_event_payload($event, $event_start, $event_end, $status, $method);
     } 
     // Place in draft
     else if (is_null($event->event_status)) {
         $status = false;
-        $trigger = "update";
-        prepare_payload($event, $event_start, $event_end, $status, $trigger);
+        $method = 'UPDATE';
+        send_event_payload($event, $event_start, $event_end, $status, $method);
     }
 
     return $result;
@@ -53,8 +55,8 @@ function notify_event_update($event) {
         $diff = array_diff($old_intersect, $event_array_intersect);
         if (!empty(array_diff($old_intersect, $event_array_intersect))) {
             $status = true;
-            $trigger = "update";
-            prepare_payload($event, $event_start, $event_end, $status, $trigger);
+            $method = 'UPDATE';
+            send_event_payload($event, $event_start, $event_end, $status, $method);
         }
     } 
 }
@@ -67,24 +69,30 @@ function notify_event_delete($post_id) {
     $event_start = strtotime($event->event_start);
     $event_end = strtotime($event->event_end);
     $status = false;
-    $trigger = "delete";
-    prepare_payload($event, $event_start, $event_end, $status, $trigger);
+    $method = 'DELETE';
+    send_event_payload($event, $event_start, $event_end, $status, $method);
 }
 
-function prepare_payload($event, $event_start, $event_end, $status, $trigger) {
+function send_event_payload($event, $event_start, $event_end, $status, $method) {
+    $headers = array(
+        'Content-Type' => 'application/json'
+    );
+    
     $body = array(
-        'event_id' => $event->event_id,
-        'event_owner' => $event->event_owner, // OrganiserUuid
-        'event_status' => $status, // IsActive
-        'event_name' => $event->event_name, // Title
-        'event_start' => $event_start, // StartDateUTC
-        'event_end' => $event_end, // EndDateUTC
-        'trigger' => $trigger
+        'id' => $event->event_id,
+        'owner' => $event->event_owner, // OrganiserUuid
+        'status' => $status, // IsActive
+        'name' => $event->event_name, // Title
+        'start' => $event_start, // StartDateUTC
+        'end' => $event_end, // EndDateUTC
+        'method' => $method
     );
 
-    $args = array('body' => $body);
-    //wp_remote_post('http://httpbin/post', $args);
-    wp_remote_get('http://httpbin/get', $args);
+    $args = array(
+        'headers' => $headers,     
+        'body' => $body
+    );
+    wp_remote_post("{$PRODUCER_URL}/api/events", $args);
 }
 
 // 0 => 'Pending',
@@ -96,17 +104,8 @@ function prepare_payload($event, $event_start, $event_end, $status, $trigger) {
 add_filter('em_booking_save', 'notify_booking_created', 10, 3);
 
 function notify_booking_created ($count, $booking, $update) {
-    $body = array(
-        'booking_id' => $booking->booking_id,
-        'event_id' => $booking->event_id,
-        'person_id' => $booking->person_id, // Name, LastName, Email, VatNumber
-        'booking_spaces' => $booking->booking_spaces,
-        'booking_status' => $booking->booking_status, // InvitationStatus
-        'trigger' => 'create' // Method
-    );
-    $args = array('body' => $body);
-    //wp_remote_post('http://httpbin/post', $args);
-    wp_remote_get('http://httpbin/get', $args);
+    $method = 'CREATE';
+    send_booking_payload($booking, $method);
 
     return $count;
 }
@@ -114,17 +113,8 @@ function notify_booking_created ($count, $booking, $update) {
 add_filter('em_booking_set_status','notify_booking_status', 10, 2);
 
 function notify_booking_status($result, $booking) {
-    $body = array(
-        'booking_id' => $booking->booking_id,
-        'event_id' => $booking->event_id,
-        'person_id' => $booking->person_id,
-        'booking_spaces' => $booking->booking_spaces,
-        'booking_status' => $booking->booking_status,
-        'trigger' => 'update'
-    );
-    $args = array('body' => $body);
-    //wp_remote_post('http://httpbin/post', $args);
-    wp_remote_get('http://httpbin/get', $args);
+    $method = 'UPDATE';
+    send_booking_payload($booking, $method);
 
     return $result;
 }
@@ -132,17 +122,30 @@ function notify_booking_status($result, $booking) {
 add_filter('em_booking_delete', 'notify_booking_deleted', 10, 2);
 
 function notify_booking_deleted ($result, $booking) {
-    $body = array(
-        'booking_id' => $booking->booking_id,
-        'event_id' => $booking->event_id,
-        'person_id' => $booking->person_id,
-        'booking_spaces' => $booking->booking_spaces,
-        'booking_status' => $booking->booking_status,
-        'trigger' => 'delete'
-    );
-    $args = array('body' => $body);
-    //wp_remote_post('http://httpbin/post', $args);
-    wp_remote_get('http://httpbin/get', $args);
+    $method = 'DELETE';
+    send_booking_payload($booking, $method);
 
     return $result;
 }
+
+function send_booking_payload($booking, $method) {
+    $headers = array(
+        'Content-Type' => 'application/json'
+    );
+    
+    $body = array(
+        'id' => $booking->booking_id,
+        'eventId' => $booking->event_id,
+        'personId' => $booking->person_id, // Name, LastName, Email, VatNumber
+        'bookingSpaces' => $booking->booking_spaces,
+        'bookingStatus' => $booking->booking_status, // InvitationStatus
+        'method' => $method // Method
+    );
+
+    $args = array(
+        'headers' => $headers,     
+        'body' => $body
+    );
+    wp_remote_post("{$PRODUCER_URL}/api/bookings", $args);
+}
+
