@@ -12,16 +12,19 @@ USER appuser
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
 WORKDIR /src
-COPY ["Producer.csproj", "./"]
-RUN dotnet restore "Producer.csproj"
-COPY . .
-WORKDIR "/src/."
-RUN dotnet build "Producer.csproj" -c Release -o /app/build
+COPY ["Consumer/Consumer.csproj", "Consumer/"]
+COPY ["Shared/Shared.csproj", "Shared/"]
+RUN dotnet restore "Consumer/Consumer.csproj"
+RUN dotnet restore "Shared/Shared.csproj"
+COPY ./Consumer/ Consumer/
+COPY ./Shared/ Shared/
+WORKDIR "/src/Consumer"
+RUN dotnet build "Consumer.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Producer.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Consumer.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Producer.dll"]
+ENTRYPOINT ["dotnet", "Consumer.dll"]

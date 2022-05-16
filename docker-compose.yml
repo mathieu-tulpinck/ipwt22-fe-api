@@ -58,27 +58,29 @@ services:
       - wordpress
       # - rabbitmq
     build:
-      context: ./Producer
-      dockerfile: Dockerfile
+      context: ./Middleware
+      dockerfile: ProducerDockerfile
     ports: # replace by expose
       - "5002:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - frontend
+      - uuidmasterapi
   consumer:
     depends_on:
       - wordpress
       # - rabbitmq
     build:
-      context: ./Consumer
-      dockerfile: Dockerfile
+      context: ./Middleware
+      dockerfile: ConsumerDockerfile
     ports: # replace by expose
       - "5004:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - frontend
+      - uuidmasterapi
   # reverseproxy:
   #   depends_on:
   #     - producer
