@@ -1,6 +1,6 @@
 namespace Middleware.Shared.Entities
 {
-    public class Event
+    public class EventResource
     {
         public int Id { get; set; }
         public int Owner { get; set; }

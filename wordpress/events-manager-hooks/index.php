@@ -24,7 +24,9 @@ function notify_event($result, $event) {
     else if (is_null($event->event_status)) {
         $status = false;
         $method = 'UPDATE';
-        send_event_payload($event, $event_start, $event_end, $status, $method);
+        $attributes = array('status' => $event_status);
+        send_event_payload($attributes, $event_start, $event_end, $status, $method);
+
     }
 
     return $result;
@@ -53,10 +55,14 @@ function notify_event_update($event) {
         $event_array_intersect["event_start"] = strtotime($event->event_start_date." ".$event->event_start_time);
         $event_array_intersect["event_end"] = strtotime($event->event_end_date." ".$event->event_end_time);
         $diff = array_diff($old_intersect, $event_array_intersect);
-        if (!empty(array_diff($old_intersect, $event_array_intersect))) {
+        if (!empty($diff)) {
             $status = true;
             $method = 'UPDATE';
-            send_event_payload($event, $event_start, $event_end, $status, $method);
+            $attributes = array();
+            foreach (array_keys($diff) as $key) {
+                $attributes[$key] = $event_array_intersect[$key];
+            };
+            send_event_payload($attributes, $event_start, $event_end, $status, $method);
         }
     } 
 }
@@ -70,29 +76,49 @@ function notify_event_delete($post_id) {
     $event_end = strtotime($event->event_end);
     $status = false;
     $method = 'DELETE';
-    send_event_payload($event, $event_start, $event_end, $status, $method);
-}
-
-function send_event_payload($event, $event_start, $event_end, $status, $method) {
     $headers = array(
         'Content-Type' => 'application/json'
     );
-    
-    $body = array(
-        'id' => $event->event_id,
-        'owner' => $event->event_owner, // OrganiserUuid
-        'status' => $status, // IsActive
-        'name' => $event->event_name, // Title
-        'start' => $event_start, // StartDateUTC
-        'end' => $event_end, // EndDateUTC
-        'method' => $method
+    $args = array(
+        'method' => 'DELETE',
+        'headers' => $headers     
+    );
+    wp_remote_request("{$PRODUCER_URL}/api/events/{$event->id}", $args);
+}
+
+function send_event_payload($attributes, $event_start, $event_end, $status, $method) {
+    $headers = array(
+        'Content-Type' => 'application/json'
     );
 
-    $args = array(
-        'headers' => $headers,     
-        'body' => $body
-    );
-    wp_remote_post("{$PRODUCER_URL}/api/events", $args);
+    if ($method == 'CREATE') {
+        $body = array(
+            'id' => $attributes->event_id,
+            'owner' => $attributes->event_owner, // OrganiserUuid
+            'status' => $status, // IsActive
+            'name' => $attributes->event_name, // Title
+            'start' => $event_start, // StartDateUTC
+            'end' => $event_end, // EndDateUTC
+        );
+
+        $args = array(
+            'headers' => $headers,     
+            'body' => $body
+        );
+
+        wp_remote_post("{$PRODUCER_URL}/api/events", $args);
+        
+    } else if ($method == 'UPDATE') {
+        $body = $attributes;
+
+        $args = array(
+            'method' => 'PATCH',
+            'headers' => $headers,     
+            'body' => $body
+        );
+        
+        wp_remote_request("{$PRODUCER_URL}/api/events/{$event->id}", $args);
+    }
 }
 
 // 0 => 'Pending',

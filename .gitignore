@@ -10,3 +10,4 @@
 FrontEnd.code-workspace
 .env
 docker-compose.draft.yml
+wordpress/playground.php
