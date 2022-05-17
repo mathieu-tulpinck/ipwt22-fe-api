@@ -26,7 +26,6 @@ function notify_event($result, $event) {
         $method = 'UPDATE';
         $attributes = array('status' => $event_status);
         send_event_payload($attributes, $event_start, $event_end, $status, $method);
-
     }
 
     return $result;
@@ -41,7 +40,7 @@ function notify_event_update($event) {
     $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
     $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
     
-    // Update (relevant attributes only)
+    // Update (modified attributes only)
     if ($created != $modified && $event->event_status == 1) {
         $event_id = $event->event_id;
         global $wpdb;
@@ -109,12 +108,10 @@ function send_event_payload($attributes, $event_start, $event_end, $status, $met
         wp_remote_post("{$PRODUCER_URL}/api/events", $args);
         
     } else if ($method == 'UPDATE') {
-        $body = $attributes;
-
         $args = array(
             'method' => 'PATCH',
             'headers' => $headers,     
-            'body' => $body
+            'body' => $attributes
         );
         
         wp_remote_request("{$PRODUCER_URL}/api/events/{$event->id}", $args);

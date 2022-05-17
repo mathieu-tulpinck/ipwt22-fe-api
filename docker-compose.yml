@@ -29,7 +29,7 @@ services:
       - "1025"
     networks:
       - frontend
-  httpbin:
+  httpbin: # testing
     image: kennethreitz/httpbin:latest
     networks:
      - frontend

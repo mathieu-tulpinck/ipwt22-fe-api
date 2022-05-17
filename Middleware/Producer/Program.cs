@@ -1,4 +1,5 @@
 using Microsoft.Net.Http.Headers;
+using Middleware.Shared.Services;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -19,18 +20,17 @@ builder.Services.AddControllers(options => {
 // HttpClient
 builder.Services.AddHttpClient("Wordpress", httpClient => {
     httpClient.BaseAddress = new Uri("http://frontend-wordpress-1/wp-json");
-    httpClient.DefaultRequestHeaders.Add(
-        HeaderNames.Accept, "application/json"
-    );
+    httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+
 });
 
 builder.Services.AddHttpClient("UuidMasterApi", httpClient => {
     httpClient.BaseAddress = new Uri("http://uuidmasterapi-api-1:5000/api");
-    httpClient.DefaultRequestHeaders.Add(
-        HeaderNames.Accept, "application/json"
-    );
+    httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
 });
 
+// UuidMasterApi repository service.
+builder.Services.AddScoped<UuidMasterApiRepository>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

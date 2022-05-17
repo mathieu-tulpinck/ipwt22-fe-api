@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Middleware.Shared.Models
 {
     // Use terms of xsd
-    public class EventDto 
+    public class EventCreateDto 
     {
         [Required]
         public int Id { get; set; }
