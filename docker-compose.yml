@@ -1,85 +1,106 @@
 version: '3.4'
 
 services:
-  wordpress:
-    image: wordpress:latest
-    ports:
-      - 80:80
-    environment:
-      WORDPRESS_DB_HOST: mysql
-      WORDPRESS_DB_USER: admin
-      WORDPRESS_DB_PASSWORD: admin
-      WORDPRESS_DB_NAME: wordpress
-    volumes:
-      - wordpress:/var/www/html
-      - ./wordpress/.htaccess:/var/www/html/.htaccess
-      - ./wordpress/dev.ini:/usr/local/etc/php/conf.d/dev.ini
-      - ./wordpress/wp-config.php:/var/www/html/wp-config.php
-      - ./wordpress/rss.php:/var/www/html/wp-content/themes/sydney/plugins/events-manager/templates/rss.php
-    networks:
-      - frontend
-  mysql:
-    image: mysql:5.7
+  db:
+    image: mysql:latest
     environment:
       MYSQL_DATABASE: wordpress
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: admin
+      MYSQL_USER: wordpress_dba
+      MYSQL_PASSWORD: Student1
       MYSQL_RANDOM_ROOT_PASSWORD: '1'
-    volumes:
-      - mysql:/var/lib/mysql
     networks:
       - frontend
+    volumes:
+      - db_data:/var/lib/mysql
   phpmyadmin:
     image: phpmyadmin:latest
     environment:
-      PMA_HOST: mysql
-      MYSQL_ROOT_PASSWORD: admin
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: Student1
     ports:
-      - 8080:80
+      - "8090:80" # Publishes the port to docker host in order to access db from browser.
     networks:
       - frontend
   mailhog:
     image: mailhog/mailhog:latest
     ports:
-      - 1025:1025
-      - 8025:8025
-    networks:
-      - frontend
-  rabbitmq:
-    image: rabbitmq:3.9-management
-    hostname: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq:/var/lib/rabbitmq
+      - "8025:8025" # Publishes the port to docker host in order to access mailbox from browser.
+    expose:
+      - "1025"
     networks:
       - frontend
   httpbin:
     image: kennethreitz/httpbin:latest
-    ports:
-      - 80
     networks:
      - frontend
     environment:
       - GUNICORN_CMD_ARGS=${GUNICORN_CMD_ARGS}
-  frontend.api:
-    image: ${DOCKER_REGISTRY-}frontendapi
+  wordpress:
+    depends_on:
+      - db
+      - mailhog
     build:
-      context: .
-      dockerfile: FrontEnd.Api/Dockerfile
+      context: ./wordpress
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress_dba
+      WORDPRESS_DB_PASSWORD: Student1
+      WORDPRESS_DB_NAME: wordpress
     networks:
       - frontend
+    volumes:
+      - wordpress_data:/var/www/html
+  producer:
     depends_on:
       - wordpress
-      - mysql
-      - mailhog
-      - rabbitmq
+      # - rabbitmq
+    build:
+      context: ./Middleware
+      dockerfile: ProducerDockerfile
+    ports: # replace by expose
+      - "5002:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - frontend
+      - uuidmasterapi
+  consumer:
+    depends_on:
+      - wordpress
+      # - rabbitmq
+    build:
+      context: ./Middleware
+      dockerfile: ConsumerDockerfile
+    ports: # replace by expose
+      - "5004:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - frontend
+      - uuidmasterapi
+  # reverseproxy:
+  #   depends_on:
+  #     - producer
+  #     - consumer
+  #   build:
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8082:8082"
+  #   networks:
+  #     - frontend
 
-volumes:
-  wordpress:
-  mysql:
-  rabbitmq:
 networks:
   frontend:
+    name: frontend
     driver: bridge
+  uuidmasterapi:
+    external: true
+
+volumes:
+  wordpress_data:
+  db_data:
+
