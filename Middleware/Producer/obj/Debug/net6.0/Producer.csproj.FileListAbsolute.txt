@@ -1,7 +1,0 @@
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.csproj.AssemblyReference.cache
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.GeneratedMSBuildEditorConfig.editorconfig
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.AssemblyInfoInputs.cache
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.AssemblyInfo.cs
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.csproj.CoreCompileInputs.cache
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.MvcApplicationPartsAssemblyInfo.cs
-/home/mathi/code/FrontEnd/Middleware/Producer/obj/Debug/net6.0/Producer.MvcApplicationPartsAssemblyInfo.cache
