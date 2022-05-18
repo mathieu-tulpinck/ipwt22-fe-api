@@ -19,7 +19,7 @@ builder.Services.AddControllers(options => {
 
 // HttpClient
 builder.Services.AddHttpClient("Wordpress", httpClient => {
-    httpClient.BaseAddress = new Uri("http://wordpress:8080/wp-json");
+    httpClient.BaseAddress = new Uri("http://wordpress:80/wp-json");
     httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
 
 });

@@ -14,10 +14,10 @@ namespace Middleware.Shared.Messages
         [XmlElement("UUID_nr")]
         public string UUID_nr { get; set; } = String.Empty;
         [XmlElement("Source")]
-        public SourceType Source { get; set; }
+        public Source Source { get; set; }
         [MaxLength(30)]
         [XmlElement("EntityType")]
-        public string EntityType { get; set; } = String.Empty;
+        public EntityType EntityType { get; set; }
         [XmlElement("SourceEntityId")]
         public int SourceEntityId { get; set; }
         [XmlElement("EntityVersion")]
@@ -39,7 +39,7 @@ namespace Middleware.Shared.Messages
         public DateTime EndDateUTC { get; set; }
  
 
-            public EventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Resource organiserResource)
+            public EventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid organiserUuid)
             {
                 UUID_nr = resource.Uuid.ToString();
                 Source = resource.Source;
@@ -48,7 +48,7 @@ namespace Middleware.Shared.Messages
                 EntityVersion = resource.EntityVersion;
                 Method = crudMethod;
 
-                OrganiserUUID = organiserResource.Uuid.ToString();
+                OrganiserUUID = organiserUuid.ToString();
                 IsActive = eventDto.Status;
                 Title = eventDto.Name;
                 StartDateUTC = eventDto.Start;

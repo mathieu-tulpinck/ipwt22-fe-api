@@ -12,12 +12,12 @@ namespace Middleware.Shared.Messages
     {
         [MinLength(32)]
         [XmlElement("UUID_nr")]
-        public string UUID_nr { get; set; } = String.Empty;
+        public Guid UUID_nr { get; set; }
         [XmlElement("Source")]
-        public SourceType Source { get; set; }
+        public Source Source { get; set; }
         [MaxLength(30)]
         [XmlElement("EntityType")]
-        public string EntityType { get; set; } = String.Empty;
+        public EntityType EntityType { get; set; }
         [XmlElement("SourceEntityId")]
         public int SourceEntityId { get; set; }
         [XmlElement("EntityVersion")]
@@ -30,7 +30,7 @@ namespace Middleware.Shared.Messages
 
             public UserMessage(Resource resource, CrudMethod crudMethod)
             {
-                UUID_nr = resource.Uuid.ToString();
+                UUID_nr = resource.Uuid;
                 Source = resource.Source;
                 EntityType = resource.EntityType;
                 SourceEntityId = resource.SourceEntityId;

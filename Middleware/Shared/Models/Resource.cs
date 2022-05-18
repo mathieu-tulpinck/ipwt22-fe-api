@@ -5,8 +5,8 @@ namespace Middleware.Shared.Models
     public class Resource
     {
         public Guid Uuid { get; set; }
-        public SourceType Source { get; set; }
-        public string EntityType { get; set; } = string.Empty;
+        public Source Source { get; set; }
+        public EntityType EntityType { get; set; }
         public int SourceEntityId { get; set; }
         public int EntityVersion { get; set; }
 

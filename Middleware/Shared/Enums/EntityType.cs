@@ -4,10 +4,9 @@ using Newtonsoft.Json.Converters;
 namespace Middleware.Shared.Enums
 {
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum SourceType
+    public enum EntityType
     {
-        Planning,
-        Crm,
-        FrontEnd
+        Organiser,
+        Event,
     }
 }

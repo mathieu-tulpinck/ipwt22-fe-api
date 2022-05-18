@@ -32,29 +32,35 @@ namespace Middleware.Producer.Controllers
             // If event owner is not known in UuidMasterApi, create it.
             var organiserResource = await _umService.GetResourceQueryString(umHttpClient, "organiser", eventDto.Owner);
             if (organiserResource is null) {
-                var organiserResourceToCreate = new ResourceDto(SourceType.FrontEnd, "organiser", eventDto.Owner, 1);
+                var organiserResourceToCreate = new ResourceDto(Source.FrontEnd, "organiser", eventDto.Owner, 1);
                 var createdOrganiserResource = await _umService.CreateResource(umHttpClient, organiserResourceToCreate);
                 if(createdOrganiserResource is not null) {
-                    _logger.LogInformation($"Organiser with Uuid {createdOrganiserResource.Uuid} was added to UuidMasterApi db.");
+                    _logger.LogInformation($"{createdOrganiserResource.EntityType} with Uuid {createdOrganiserResource.Uuid} was added to UuidMasterApi db.");
                 } else {
-                    _logger.LogError($"The resource creation process failed. Organiser with SourceEntityId {organiserResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
+                    _logger.LogError($"Producer failed to insert the resource into the database. {organiserResourceToCreate.EntityType} with SourceEntityId {organiserResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
                     return Problem();
                 }
             } else {
-                _logger.LogInformation($"Organiser with Uuid {organiserResource.Uuid} already exists in UuidMasterApi db. No action taken.");
+                _logger.LogInformation($"{organiserResource.EntityType} with Uuid {organiserResource.Uuid} already exists in UuidMasterApi db. No action taken.");
                 return NoContent();
             }
 
-            var eventResourceToCreate =  new ResourceDto(SourceType.FrontEnd, "event", eventDto.Id, 1);
+            var eventResourceToCreate =  new ResourceDto(Source.FrontEnd, "event", eventDto.Id, 1);
             var createdEventResource = await _umService.CreateResource(umHttpClient, eventResourceToCreate);
             
             // prepare and send rabbitmq message relating to new event.
             if (createdEventResource is not null) {
-                _logger.LogInformation($"Event with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
+                _logger.LogInformation($"{createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
                 var message = await _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE);
-                return NoContent();
+                if (message is not null) {
+                    return NoContent();
+
+                } else {
+                    _logger.LogError($"Producer failed to serialize the message. {createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was not sent to the queue.");
+                    return Problem();
+                }
             } else {
-                _logger.LogError($"The resource creation process failed. Event with SourceEntityId {eventResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
+                _logger.LogError($"Producer failed to insert the resource into the database. {eventResourceToCreate.EntityType} with SourceEntityId {eventResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
                 return Problem();
             }
         }
@@ -76,11 +82,11 @@ namespace Middleware.Producer.Controllers
                     
                     return NoContent();
                 } else {
-                    _logger.LogError($"The resource update process failed. Event with SourceEntityId {sourceEntityId} was not updated in UuidMasterApi db.");
+                    _logger.LogError($"Producer failed to update the resource into the database. {eventResource.EntityType} with SourceEntityId {eventResource.SourceEntityId} was not updated in UuidMasterApi db.");
                     return Problem();
                 }
             } else {
-                _logger.LogError($"The resource update process failed. Event with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db.");
+                _logger.LogError($"Producer failed to update the resource into the database. {EntityType.Event} with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db.");
                 return Problem();
             }
 

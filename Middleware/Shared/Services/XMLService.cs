@@ -18,22 +18,21 @@ namespace Middleware.Shared.Services
             _umService = umService ?? throw new ArgumentNullException(nameof(umService));
         }
         
-        public async Task<string?> PreparePayload(Resource resource, dynamic dynamicObject, CrudMethod crudMethod)
+        public async Task<string?> PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod)
         {
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
 
             switch (resource.EntityType)
             {
-                case "attendee":
-
-                case "event":
-                    var organiserResource = await _umService.GetResourceQueryString(umHttpClient, "organiser", dynamicObject.Owner);
-                    var message = new EventMessage(resource, dynamicObject, crudMethod,organiserResource);
+                // attendee
+                case EntityType.Event:
+                    var organiserResource = await _umService.GetResourceQueryString(umHttpClient, "organiser", dto.Owner);
+                    var message = new EventMessage(resource, dto, crudMethod, organiserResource.Uuid);
                     
                     // XML should be validated programmatically based on xsd. TODO.
                
                     var xmlSerializer =  new XmlSerializer(message.GetType());
-                    var xmlMessage = SerializeToXML(message);
+                    var xmlMessage = SerializeToXML<EventMessage>(message);
 
                     return xmlMessage;
                 default:
@@ -43,30 +42,30 @@ namespace Middleware.Shared.Services
 
 
         // From https://stackoverflow.com/questions/721537/streaming-xml-serialization-in-net.
-        public String SerializeToXML<EventMessage>(EventMessage message)
+        public String SerializeToXML<T>(T message)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder mutableString = new StringBuilder();
 
             XmlWriterSettings settings = new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true };
 
-            using (XmlWriter xmlWriter = XmlWriter.Create(sb, settings))
+            using (XmlWriter xmlWriter = XmlWriter.Create(mutableString, settings))
             {
                 if (xmlWriter != null)
                 {
-                    new XmlSerializer(typeof(EventMessage)).Serialize(xmlWriter, message);
+                    new XmlSerializer(typeof(T)).Serialize(xmlWriter, message);
                 }
             }
 
-            return sb.ToString();
+            return mutableString.ToString();
         }
 
-        public void DeserializeFromXML<EventMessage>(string xmlString, out EventMessage eventMessage) where EventMessage : class
+        public void DeserializeFromXML<T>(string xmlString, out T eventMessage) where T : class
         {
-            XmlSerializer xmlSerializer = new XmlSerializer(typeof (EventMessage));
+            XmlSerializer xmlSerializer = new XmlSerializer(typeof (T));
 
             using (MemoryStream memoryStream = new MemoryStream(StringToUTF8ByteArray(xmlString)))
             {
-                eventMessage = xmlSerializer.Deserialize(memoryStream) as EventMessage;
+                eventMessage = xmlSerializer.Deserialize(memoryStream) as T;
             }
         }
 
