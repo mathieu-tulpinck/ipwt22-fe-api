@@ -9,7 +9,7 @@ using Middleware.Shared.Models;
 
 namespace Middleware.Shared.Services
 {
-    public class UuidMasterApiRepository
+    public class UuidMasterApiService
     {
         public async Task<ResourceDto?> GetResourceQueryString(HttpClient umHttpClient, string entityType, int sourceEntityId)
         {
@@ -32,7 +32,6 @@ namespace Middleware.Shared.Services
             if (response.IsSuccessStatusCode) {
                 var content = await response.Content.ReadAsStringAsync();
                 var resourceDto = JsonConvert.DeserializeObject<ResourceDto>(content);
-                // _logger.LogInformation(resourceDto.ToString());
                 return resourceDto;
             } else {
                 return null;
@@ -46,14 +45,11 @@ namespace Middleware.Shared.Services
             var json = JsonConvert.SerializeObject(patchDoc);
             var body = new StringContent(json, Encoding.UTF8, Application.Json);
             var response = await umHttpClient.PatchAsync($"resources/{uuid}", body);
-            if (response.StatusCode == HttpStatusCode.NoContent) {
-                // _logger.LogInformation(resourceDto.ToString());
+            if (response.IsSuccessStatusCode) {
                 return true;
             } else {
                 return false;
             }
         }
-
-        
     }
 }

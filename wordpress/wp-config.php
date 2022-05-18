@@ -84,9 +84,6 @@ define( 'SECURE_AUTH_SALT', getenv_docker('WORDPRESS_SECURE_AUTH_SALT', '31793d6
 define( 'LOGGED_IN_SALT',   getenv_docker('WORDPRESS_LOGGED_IN_SALT',   '47d933cd87845718ed36c32396f5decc49413cd3') );
 define( 'NONCE_SALT',       getenv_docker('WORDPRESS_NONCE_SALT',       'bbe7fc264104e5613a904ae1df9bc23165181e1e') );
 
-// JWT
-define('JWT_AUTH_SECRET_KEY', 'nyzgeu$?CzR@u,Wi82scR{42poJ:q_v|nWW$kz;J[+sq$|UeEtRiSe$[xq| P|~f');
-define('JWT_AUTH_CORS_ENABLE', true);
 // (See also https://wordpress.stackexchange.com/a/152905/199287)
 
 /**#@-*/
@@ -125,6 +122,13 @@ if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($_SERVER['HTTP_X_FORWARD
 if ($configExtra = getenv_docker('WORDPRESS_CONFIG_EXTRA', '')) {
         eval($configExtra);
 }
+
+// JWT
+define('JWT_AUTH_SECRET_KEY', 'nyzgeu$?CzR@u,Wi82scR{42poJ:q_v|nWW$kz;J[+sq$|UeEtRiSe$[xq| P|~f');
+define('JWT_AUTH_CORS_ENABLE', true);
+
+// Producer
+define('PRODUCER_URL', "http://producer:5000/");
 
 /* That's all, stop editing! Happy publishing. */
 

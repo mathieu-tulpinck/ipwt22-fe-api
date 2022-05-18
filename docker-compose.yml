@@ -29,12 +29,12 @@ services:
       - "1025"
     networks:
       - frontend
-  httpbin: # testing
-    image: kennethreitz/httpbin:latest
-    networks:
-     - frontend
-    environment:
-      - GUNICORN_CMD_ARGS=${GUNICORN_CMD_ARGS}
+  # httpbin: # testing
+  #   image: kennethreitz/httpbin:latest
+  #   networks:
+  #    - frontend
+  #   environment:
+  #     - GUNICORN_CMD_ARGS=${GUNICORN_CMD_ARGS}
   wordpress:
     depends_on:
       - db
@@ -54,9 +54,9 @@ services:
     volumes:
       - wordpress_data:/var/www/html
   producer:
-    depends_on:
+    depends_on: # Not possible to depend on service defined in other file.
       - wordpress
-      # - rabbitmq
+      # - rabbitmq # Not possible to depend on service defined in other file.
     build:
       context: ./Middleware
       dockerfile: ProducerDockerfile
@@ -67,10 +67,10 @@ services:
     networks:
       - frontend
       - uuidmasterapi
+      - rabbitmq
   consumer:
     depends_on:
       - wordpress
-      # - rabbitmq
     build:
       context: ./Middleware
       dockerfile: ConsumerDockerfile
@@ -81,6 +81,7 @@ services:
     networks:
       - frontend
       - uuidmasterapi
+      - rabbitmq
   # reverseproxy:
   #   depends_on:
   #     - producer
@@ -97,10 +98,12 @@ networks:
   frontend:
     name: frontend
     driver: bridge
+  rabbitmq:
+    external: true
   uuidmasterapi:
     external: true
 
 volumes:
-  wordpress_data:
-  db_data:
+  wordpress_data: {}
+  db_data: {}
 
