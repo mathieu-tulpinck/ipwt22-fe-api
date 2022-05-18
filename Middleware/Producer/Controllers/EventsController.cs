@@ -30,31 +30,31 @@ namespace Middleware.Producer.Controllers
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
 
             // If event owner is not known in UuidMasterApi, create it.
-            var organiserDto = await _umService.GetResourceQueryString(umHttpClient, "organiser", eventDto.Owner);
-            if (organiserDto is null) {
-                var organiserResourceCreateDto = new ResourceCreateDto(SourceType.FrontEnd, "organiser", eventDto.Owner, 1);
-                var organiserResourceDto = await _umService.CreateResource(umHttpClient, organiserResourceCreateDto);
-                if(organiserResourceDto is not null) {
-                    _logger.LogInformation($"Organiser with Uuid {organiserResourceDto.Uuid} was added to UuidMasterApi db.");
+            var organiserResource = await _umService.GetResourceQueryString(umHttpClient, "organiser", eventDto.Owner);
+            if (organiserResource is null) {
+                var organiserResourceToCreate = new ResourceDto(SourceType.FrontEnd, "organiser", eventDto.Owner, 1);
+                var createdOrganiserResource = await _umService.CreateResource(umHttpClient, organiserResourceToCreate);
+                if(createdOrganiserResource is not null) {
+                    _logger.LogInformation($"Organiser with Uuid {createdOrganiserResource.Uuid} was added to UuidMasterApi db.");
                 } else {
-                    _logger.LogError($"The resource creation process failed. User with SourceEntityId {organiserResourceCreateDto.SourceEntityId} was not added to UuidMasterApi db.");
+                    _logger.LogError($"The resource creation process failed. Organiser with SourceEntityId {organiserResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
                     return Problem();
                 }
             } else {
-                _logger.LogInformation($"Organiser with Uuid {organiserDto.Uuid} already exists in UuidMasterApi db. No action taken.");
+                _logger.LogInformation($"Organiser with Uuid {organiserResource.Uuid} already exists in UuidMasterApi db. No action taken.");
                 return NoContent();
             }
 
-            var eventResourceCreateDto =  new ResourceCreateDto(SourceType.FrontEnd, "event", eventDto.Id, 1);
-            var eventResourceDto = await _umService.CreateResource(umHttpClient, eventResourceCreateDto);
+            var eventResourceToCreate =  new ResourceDto(SourceType.FrontEnd, "event", eventDto.Id, 1);
+            var createdEventResource = await _umService.CreateResource(umHttpClient, eventResourceToCreate);
             
             // prepare and send rabbitmq message relating to new event.
-            if (eventResourceDto is not null) {
-                _logger.LogInformation($"Event with Uuid {eventResourceDto.Uuid} was added to UuidMasterApi db.");
-                _xmlService.PreparePayload(eventResourceDto, eventDto, CrudMethod.CREATE);
+            if (createdEventResource is not null) {
+                _logger.LogInformation($"Event with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
+                var message = await _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE);
                 return NoContent();
             } else {
-                _logger.LogError($"The resource creation process failed. Event with SourceEntityId {eventResourceCreateDto.SourceEntityId} was not added to UuidMasterApi db.");
+                _logger.LogError($"The resource creation process failed. Event with SourceEntityId {eventResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
                 return Problem();
             }
         }
@@ -66,12 +66,12 @@ namespace Middleware.Producer.Controllers
             JObject rawJson = JObject.Parse(attributes.ToString());
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
             
-            var eventDto = await _umService.GetResourceQueryString(umHttpClient, "event", sourceEntityId);
+            var eventResource = await _umService.GetResourceQueryString(umHttpClient, "event", sourceEntityId);
             // Difficult to retrieve owner id at this stage.
-            if (eventDto is not null) {
-                var response = await _umService.PatchResource(umHttpClient, eventDto.Uuid, eventDto.EntityVersion);
+            if (eventResource is not null) {
+                var response = await _umService.PatchResource(umHttpClient, eventResource.Uuid, eventResource.EntityVersion);
                 if (response) {
-                    _logger.LogInformation($"Event with Uuid {eventDto.Uuid} was updated in UuidMasterApi db.");                    
+                    _logger.LogInformation($"Event with Uuid {eventResource.Uuid} was updated in UuidMasterApi db.");                    
                     // Send Rabbitmq message relating to updated event.
                     
                     return NoContent();

@@ -18,17 +18,17 @@ namespace Middleware.Shared.Services
             _umService = umService ?? throw new ArgumentNullException(nameof(umService));
         }
         
-        public async Task<string?> PreparePayload(ResourceDto resourceDto, dynamic dynamicObject, CrudMethod crudMethod)
+        public async Task<string?> PreparePayload(Resource resource, dynamic dynamicObject, CrudMethod crudMethod)
         {
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
 
-            switch (resourceDto.EntityType)
+            switch (resource.EntityType)
             {
                 case "attendee":
 
                 case "event":
-                    var organiserResourceDto = await _umService.GetResourceQueryString(umHttpClient, "organiser", dynamicObject.Owner);
-                    var message = new EventMessage(resourceDto, dynamicObject, crudMethod,organiserResourceDto);
+                    var organiserResource = await _umService.GetResourceQueryString(umHttpClient, "organiser", dynamicObject.Owner);
+                    var message = new EventMessage(resource, dynamicObject, crudMethod,organiserResource);
                     
                     // XML should be validated programmatically based on xsd. TODO.
                

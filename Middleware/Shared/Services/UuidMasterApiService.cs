@@ -11,7 +11,7 @@ namespace Middleware.Shared.Services
 {
     public class UuidMasterApiService
     {
-        public async Task<ResourceDto?> GetResourceQueryString(HttpClient umHttpClient, string entityType, int sourceEntityId)
+        public async Task<Resource?> GetResourceQueryString(HttpClient umHttpClient, string entityType, int sourceEntityId)
         {
             var response = await umHttpClient.GetAsync($"resources/search?source=FrontEnd&entityType={entityType}&sourceEntityId={sourceEntityId}");
             if(response.StatusCode == HttpStatusCode.NotFound) {
@@ -19,20 +19,20 @@ namespace Middleware.Shared.Services
             }
             
             var content = await response.Content.ReadAsStringAsync();
-            var resourceDto = JsonConvert.DeserializeObject<ResourceDto>(content);
+            var resource = JsonConvert.DeserializeObject<Resource>(content);
             
-            return resourceDto;
+            return resource;
         }
 
-        public async Task<ResourceDto?> CreateResource(HttpClient umHttpClient, ResourceCreateDto resourceCreateDto)
+        public async Task<Resource?> CreateResource(HttpClient umHttpClient, ResourceDto resourceDto)
         {
-            var json = JsonConvert.SerializeObject(resourceCreateDto);
+            var json = JsonConvert.SerializeObject(resourceDto);
             var body = new StringContent(json, Encoding.UTF8, Application.Json);
             var response = await umHttpClient.PostAsync("resources", body);
             if (response.IsSuccessStatusCode) {
                 var content = await response.Content.ReadAsStringAsync();
-                var resourceDto = JsonConvert.DeserializeObject<ResourceDto>(content);
-                return resourceDto;
+                var resource = JsonConvert.DeserializeObject<Resource>(content);
+                return resource;
             } else {
                 return null;
             }
@@ -40,7 +40,7 @@ namespace Middleware.Shared.Services
 
         public async Task<bool> PatchResource(HttpClient umHttpClient, Guid uuid, int entityVersion)
         {
-            var patchDoc = new JsonPatchDocument<ResourceUpdateDto>();
+            var patchDoc = new JsonPatchDocument<ResourceDto>();
             patchDoc.Replace(r => r.EntityVersion, entityVersion++);
             var json = JsonConvert.SerializeObject(patchDoc);
             var body = new StringContent(json, Encoding.UTF8, Application.Json);

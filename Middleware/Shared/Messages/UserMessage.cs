@@ -28,13 +28,13 @@ namespace Middleware.Shared.Messages
 
  
 
-            public UserMessage(ResourceDto resourceDto, CrudMethod crudMethod)
+            public UserMessage(Resource resource, CrudMethod crudMethod)
             {
-                UUID_nr = resourceDto.Uuid.ToString();
-                Source = resourceDto.Source;
-                EntityType = resourceDto.EntityType;
-                SourceEntityId = resourceDto.SourceEntityId;
-                EntityVersion = resourceDto.EntityVersion;
+                UUID_nr = resource.Uuid.ToString();
+                Source = resource.Source;
+                EntityType = resource.EntityType;
+                SourceEntityId = resource.SourceEntityId;
+                EntityVersion = resource.EntityVersion;
                 Method = crudMethod;
             }
     }

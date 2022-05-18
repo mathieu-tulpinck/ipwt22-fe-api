@@ -39,16 +39,16 @@ namespace Middleware.Shared.Messages
         public DateTime EndDateUTC { get; set; }
  
 
-            public EventMessage(ResourceDto resourceDto, EventDto eventDto, CrudMethod crudMethod, ResourceDto organiserResourceDto)
+            public EventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Resource organiserResource)
             {
-                UUID_nr = resourceDto.Uuid.ToString();
-                Source = resourceDto.Source;
-                EntityType = resourceDto.EntityType;
-                SourceEntityId = resourceDto.SourceEntityId;
-                EntityVersion = resourceDto.EntityVersion;
+                UUID_nr = resource.Uuid.ToString();
+                Source = resource.Source;
+                EntityType = resource.EntityType;
+                SourceEntityId = resource.SourceEntityId;
+                EntityVersion = resource.EntityVersion;
                 Method = crudMethod;
 
-                OrganiserUUID = organiserResourceDto.Uuid.ToString();
+                OrganiserUUID = organiserResource.Uuid.ToString();
                 IsActive = eventDto.Status;
                 Title = eventDto.Name;
                 StartDateUTC = eventDto.Start;
