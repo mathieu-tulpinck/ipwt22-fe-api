@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Middleware.Shared.Models
 {
     // Use terms of xsd
-    public class EventCreateDto 
+    public class EventDto 
     {
         [Required]
         public int Id { get; set; }
@@ -19,12 +19,10 @@ namespace Middleware.Shared.Models
         public DateTime Start { get; set; }
         [Required]
         public DateTime End { get; set; }
-        [Required]
-        public CrudMethod Method { get; set; }
 
         public override string ToString()
         {
-            return $"{this.Id}, {this.Owner}, {this.Status.ToString()}, {this.Name}, {this.Start.ToString()}, {this.End.ToString()}, {this.Method.ToString()}";
+            return $"{this.Id}, {this.Owner}, {this.Status.ToString()}, {this.Name}, {this.Start.ToString()}, {this.End.ToString()}";
         }
     }
 }

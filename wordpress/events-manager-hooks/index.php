@@ -43,7 +43,7 @@ function notify_event_update($event) {
     if ($created != $modified && $event->event_status == 1) {
         $event_id = $event->event_id;
         global $wpdb;
-        $old = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . ' WHERE event_id=%s', $event_id), ARRAY_A);
+        $old = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . " WHERE event_id=%s", $event_id), ARRAY_A);
         $master = array('event_id' => 0, 'event_owner' => 0, 'event_status' => 0, 'event_name' => 0, 'event_start' => 0, 'event_end' => 0);
         $old_intersect = array_intersect_key($old, $master);
         $old_intersect["event_start"] = strtotime($old_intersect["event_start"]);
@@ -70,7 +70,7 @@ add_action('wp_trash_post', 'notify_event_delete');
 
 function notify_event_delete($post_id) {
     global $wpdb;
-    $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . ' WHERE post_id=%s', $post_id), OBJECT);
+    $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . " WHERE post_id=%s", $post_id), OBJECT);
     $headers = array(
         'Content-Type' => 'application/json'
     );
