@@ -1,6 +1,7 @@
+using Serilog;
 using Microsoft.Net.Http.Headers;
 using Middleware.Shared.Services;
-using Serilog;
+using RabbitMQ.Client;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -11,8 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+// Logger
 builder.Host.UseSerilog();
 
+// RabbitMQ
+builder.Services.AddSingleton<RabbitMQPersistentConnection>(sp => {
+    var logger = sp.GetRequiredService<ILogger<RabbitMQPersistentConnection>>();
+    var factory = new ConnectionFactory() { HostName = "rabbitmq" };
+
+    return new RabbitMQPersistentConnection(logger, factory);
+});
+
+builder.Services.AddScoped<RabbitMQService>();
+
+// Controllers
 builder.Services.AddControllers(options => {
     options.ReturnHttpNotAcceptable = true;
 }).AddNewtonsoftJson();

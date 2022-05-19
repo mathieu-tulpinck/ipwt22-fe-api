@@ -12,13 +12,15 @@ namespace Middleware.Producer.Controllers
     public class EventsController : ControllerBase
     {
         private readonly ILogger<EventsController> _logger;
+        private readonly RabbitMQService _rbmqService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly UuidMasterApiService _umService;
         private readonly XMLService _xmlService;
 
-        public EventsController(ILogger<EventsController> logger, IHttpClientFactory httpClientFactory, UuidMasterApiService umService, XMLService xmlService)
+        public EventsController(ILogger<EventsController> logger, RabbitMQService rbmqService, IHttpClientFactory httpClientFactory, UuidMasterApiService umService, XMLService xmlService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _rbmqService = rbmqService ?? throw new ArgumentNullException(nameof(rbmqService));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _umService = umService ?? throw new ArgumentNullException(nameof(umService));
             _xmlService = xmlService ?? throw new ArgumentNullException(nameof(xmlService));
@@ -54,7 +56,9 @@ namespace Middleware.Producer.Controllers
                 _logger.LogInformation($"{createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
                 var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, (Guid)organiserUuid!);
                 if (message is not null) {
-                    _logger.LogInformation(message);
+                    _logger.LogInformation("Producer successfully serialized the message.");
+                    _rbmqService.InitializeBroker(ExchangeName.FrontEnd, QueueName.FrontEndEvents, RoutingKey.FrontEndEvents);
+                    _rbmqService.PublishMessage(ExchangeName.FrontEnd, RoutingKey.FrontEndEvents, message);
                     return NoContent();
                 } else {
                     _logger.LogError($"Producer failed to serialize the message. {createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was not sent to the queue.");

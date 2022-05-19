@@ -68,8 +68,6 @@ services:
       - frontend
       - uuidmasterapi
       - rabbitmq
-    volumes:
-      - ./Middleware/Shared/XMLSchemas:/app/XMLSchemas
   # consumer:
   #   depends_on:
   #     - wordpress

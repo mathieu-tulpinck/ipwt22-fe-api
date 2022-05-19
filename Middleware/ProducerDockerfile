@@ -27,4 +27,5 @@ RUN dotnet publish "Producer.csproj" -c Release -o /app/publish /p:UseAppHost=fa
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY ["Shared/XMLSchemas", "XMLSchemas/"]
 ENTRYPOINT ["dotnet", "Producer.dll"]
