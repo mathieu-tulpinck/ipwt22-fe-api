@@ -1,13 +1,13 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace Middleware.Shared.Enums 
+namespace Middleware.Shared.Enums
 {
     [JsonConverter(typeof(StringEnumConverter))]
-    public enum CrudMethod 
+    public enum Source
     {
-        CREATE,
-        UPDATE,
-        DELETE
+        PLANNING,
+        CRM,
+        FRONTEND
     }
 }

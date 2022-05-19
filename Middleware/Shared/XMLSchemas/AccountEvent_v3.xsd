@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="AccountEvent">
+        <xs:complexType>
+            <xs:sequence>
+
+            <!-- GUID moet min bestaan uit 32 karakters -->
+                <xs:element name="UUID_nr" >
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:minLength value="32"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- SourceEntityId moet hoger dan 0 zijn -->
+                <xs:element name="SourceEntityId">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- EntityType max toegelaten karakters = 30 -->
+                <xs:element name="EntityType" >
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:maxLength value="30"></xs:maxLength>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- EntityVersion moet hoger zijn dan 0 -->
+                <xs:element name="EntityVersion" >
+                    <xs:simpleType>
+                        <xs:restriction base="xs:integer">
+                            <xs:minExclusive value="0" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- Source kan enkel frontend, crm of planning bevatten -->
+                <xs:element name="Source">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+							<xs:enumeration value="FRONTEND" />
+							<xs:enumeration value="CRM" />
+							<xs:enumeration value="PLANNING" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- Method kan enkel CRUD bevatten -->
+                <xs:element name="Method">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+							<xs:enumeration value="CREATE" />
+							<xs:enumeration value="UPDATE" />
+							<xs:enumeration value="DELETE" />
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- Name max toegelaten karakters = 30 -->
+                <xs:element name="Name">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:maxLength value="30"></xs:maxLength>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- Email volgens email pattern-->
+                <xs:element name="Email" >
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:pattern value="[^@]+@[^\.]+\..+"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+                <!-- VatNumber moet min 12 karakters hebben, whitespace = collapsed
+                element = optional + element = not required -->
+                <xs:element name="VatNumber" nillable="true" minOccurs="0">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                            <xs:minLength value="12"/> 
+                            <xs:whiteSpace value="collapse"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

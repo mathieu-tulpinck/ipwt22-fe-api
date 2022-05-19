@@ -4,8 +4,6 @@
  * Plugin Name: Events manager hooks
  */
 
-define("PRODUCER_URL", "http://frontend-producer-1:5000/");
-
 add_filter('em_event_save', 'notify_event', 10, 2);
 
 function notify_event($result, $event) {
@@ -14,24 +12,23 @@ function notify_event($result, $event) {
     $modified = strtotime($post->post_modified_gmt);
     $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
     $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
-    // Created
+    // Event created.
     if ($created == $modified && $event->event_status == 1) {
         $status = true;
         $method = 'CREATE';
-        send_event_payload($event, $event_start, $event_end, $status, $method);
+        send_event_payload($event, $attributes = [], $event_start, $event_end, $status, $method);
     } 
-    // Place in draft
+    // Event placed in draft.
     else if (is_null($event->event_status)) {
         $status = false;
         $method = 'UPDATE';
-        $attributes = array('status' => $event_status);
-        send_event_payload($attributes, $event_start, $event_end, $status, $method);
-
+        send_event_payload($event, $attributes = [], $event_start, $event_end, $status, $method);
     }
 
     return $result;
 }
 
+// Event updated. Only modified attributes are sent to Producer.
 add_action('em_event_save_pre', 'notify_event_update');
 
 function notify_event_update($event) {
@@ -41,16 +38,15 @@ function notify_event_update($event) {
     $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
     $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
     
-    // Update (relevant attributes only)
     if ($created != $modified && $event->event_status == 1) {
         $event_id = $event->event_id;
         global $wpdb;
-        $old = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . ' WHERE event_id=%s', $event_id), ARRAY_A);
+        $old = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . " WHERE event_id=%s", $event_id), ARRAY_A);
         $master = array('event_id' => 0, 'event_owner' => 0, 'event_status' => 0, 'event_name' => 0, 'event_start' => 0, 'event_end' => 0);
         $old_intersect = array_intersect_key($old, $master);
         $old_intersect["event_start"] = strtotime($old_intersect["event_start"]);
         $old_intersect["event_end"] = strtotime($old_intersect["event_end"]);
-        $event_array = json_decode(json_encode($event), true);
+        $event_array = json_decode(json_encode($event), true); // Convert to array.
         $event_array_intersect = array_intersect_key($event_array, $master);
         $event_array_intersect["event_start"] = strtotime($event->event_start_date." ".$event->event_start_time);
         $event_array_intersect["event_end"] = strtotime($event->event_end_date." ".$event->event_end_time);
@@ -62,20 +58,17 @@ function notify_event_update($event) {
             foreach (array_keys($diff) as $key) {
                 $attributes[$key] = $event_array_intersect[$key];
             };
-            send_event_payload($attributes, $event_start, $event_end, $status, $method);
+            send_event_payload($event, $attributes, $event_start, $event_end, $status, $method);
         }
     } 
 }
 
+// Event placed in trash.
 add_action('wp_trash_post', 'notify_event_delete');
 
 function notify_event_delete($post_id) {
     global $wpdb;
-    $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . ' WHERE post_id=%s', $post_id), OBJECT);
-    $event_start = strtotime($event->event_start);
-    $event_end = strtotime($event->event_end);
-    $status = false;
-    $method = 'DELETE';
+    $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM " . EM_EVENTS_TABLE . " WHERE post_id=%s", $post_id), OBJECT);
     $headers = array(
         'Content-Type' => 'application/json'
     );
@@ -83,41 +76,55 @@ function notify_event_delete($post_id) {
         'method' => 'DELETE',
         'headers' => $headers     
     );
-    wp_remote_request("{$PRODUCER_URL}/api/events/{$event->id}", $args);
+    wp_remote_request("http://producer:5000/api/events/{$event->id}", $args);
 }
 
-function send_event_payload($attributes, $event_start, $event_end, $status, $method) {
+function send_event_payload($event, $attributes, $event_start, $event_end, $status, $method) {
     $headers = array(
         'Content-Type' => 'application/json'
     );
 
     if ($method == 'CREATE') {
         $body = array(
-            'id' => $attributes->event_id,
-            'owner' => $attributes->event_owner, // OrganiserUuid
+            'id' => $event->event_id,
+            'owner' => $event->event_owner, // OrganiserUuid
             'status' => $status, // IsActive
-            'name' => $attributes->event_name, // Title
+            'name' => $event->event_name, // Title
             'start' => $event_start, // StartDateUTC
             'end' => $event_end, // EndDateUTC
         );
 
+        $body = wp_json_encode($body);
+
         $args = array(
             'headers' => $headers,     
-            'body' => $body
+            'body' => $body,
+            'data_format' => 'body'
         );
 
-        wp_remote_post("{$PRODUCER_URL}/api/events", $args);
-        
+        wp_remote_post("http://producer:5000/api/events", $args);
     } else if ($method == 'UPDATE') {
-        $body = $attributes;
+        $attributes = array_combine(
+            array_map(
+                function($subject) {
+                    return str_replace("event_", "", $subject);
+                }, array_keys($attributes)
+            ), array_values($attributes)
+        );
+        $attributes + array(
+            'id' => $event->event_id,
+            'owner' => $event->owner
+        ); // Business rule: event owner should be allowed to change. Not enforceable in settings.
+        $body = wp_json_encode($attributes);
 
         $args = array(
             'method' => 'PATCH',
             'headers' => $headers,     
-            'body' => $body
+            'body' => $body,
+            'data_format' => 'body'
         );
         
-        wp_remote_request("{$PRODUCER_URL}/api/events/{$event->id}", $args);
+        wp_remote_request("http://producer:5000/api/events/{$event->event_id}", $args);
     }
 }
 
@@ -127,51 +134,77 @@ function send_event_payload($attributes, $event_start, $event_end, $status, $met
 // 3 => 'Cancelled',
 // 4 => 'Awaiting Online Payment',
 // 5 => 'Awaiting Payment'
+// Booking created.
 add_filter('em_booking_save', 'notify_booking_created', 10, 3);
 
 function notify_booking_created ($count, $booking, $update) {
     $method = 'CREATE';
-    send_booking_payload($booking, $method);
+    $attributes = json_decode(json_encode($booking), true); // Convert to array.
+    send_booking_payload($booking->id, $booking, $method);
 
     return $count;
 }
 
+// Booking status updated.
 add_filter('em_booking_set_status','notify_booking_status', 10, 2);
 
 function notify_booking_status($result, $booking) {
     $method = 'UPDATE';
-    send_booking_payload($booking, $method);
+    $attributes = array('bookingStatus' => $booking->booking_status);
+    send_booking_payload($booking->id, $attributes, $method);
 
     return $result;
 }
 
+// Booking deleted.
 add_filter('em_booking_delete', 'notify_booking_deleted', 10, 2);
 
 function notify_booking_deleted ($result, $booking) {
-    $method = 'DELETE';
-    send_booking_payload($booking, $method);
+    $headers = array(
+        'Content-Type' => 'application/json'
+    );
+    $args = array(
+        'method' => 'DELETE',
+        'headers' => $headers     
+    );
+    wp_remote_request("http://producer:5000/api/bookings/{$booking->id}", $args);
 
     return $result;
 }
 
-function send_booking_payload($booking, $method) {
+function send_booking_payload($booking_id, $attributes, $method) {
     $headers = array(
         'Content-Type' => 'application/json'
     );
     
-    $body = array(
-        'id' => $booking->booking_id,
-        'eventId' => $booking->event_id,
-        'personId' => $booking->person_id, // Name, LastName, Email, VatNumber
-        'bookingSpaces' => $booking->booking_spaces,
-        'bookingStatus' => $booking->booking_status, // InvitationStatus
-        'method' => $method // Method
-    );
+    if ($method == 'CREATE') {
+        $body = array(
+            'id' => $attributes['booking_id'],
+            'eventId' => $attributes['event_id'],
+            'personId' => $attributes['person_id'], // Name, LastName, Email, VatNumber
+            'bookingSpaces' => $attributes['booking_spaces'],
+            'bookingStatus' => $attributes['booking_status'], // InvitationStatus
+        );  
 
-    $args = array(
-        'headers' => $headers,     
-        'body' => $body
-    );
-    wp_remote_post("{$PRODUCER_URL}/api/bookings", $args);
+        $body = wp_json_encode($body);
+
+        $args = array(
+            'headers' => $headers,     
+            'body' => $body
+        );
+
+        wp_remote_post("http://producer:5000/api/bookings", $args);
+    } else if ($method == 'UPDATE') {
+        $body = wp_json_encode($attributes);
+
+        $args = array(
+            'method' => 'PATCH',
+            'headers' => $headers,     
+            'body' => $body,
+            'data_format' => 'body'
+        );
+        
+        wp_remote_request("http://producer:5000/api/bookings/{$booking_id}", $args);
+    }
 }
 

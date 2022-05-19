@@ -1,9 +1,7 @@
 namespace Middleware.Shared.Enums
 {
-    public enum SourceType
+    public enum ExchangeName
     {
-        Planning,
-        Crm,
         FrontEnd
     }
 }

@@ -2,19 +2,17 @@ using Middleware.Shared.Enums;
 
 namespace Middleware.Shared.Models
 {
-    public class ResourceDto
+    public class Resource
     {
+        public Guid Uuid { get; set; }
         public Source Source { get; set; }
         public EntityType EntityType { get; set; }
         public int SourceEntityId { get; set; }
         public int EntityVersion { get; set; }
 
-        public ResourceDto(Source source, EntityType entityType, int sourceEntityId, int entityVersion)
+        public override string ToString()
         {
-            Source = source;
-            EntityType = entityType;
-            SourceEntityId = sourceEntityId;
-            EntityVersion = entityVersion;
+            return $"{this.Uuid}, {this.Source}, {this.EntityType}, {this.SourceEntityId}, {this.EntityVersion}";
         }
     }
 }

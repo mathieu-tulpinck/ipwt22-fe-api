@@ -1,5 +1,7 @@
-using Microsoft.Net.Http.Headers;
 using Serilog;
+using Microsoft.Net.Http.Headers;
+using Middleware.Shared.Services;
+using RabbitMQ.Client;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -10,27 +12,41 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+// Logger
 builder.Host.UseSerilog();
 
+// RabbitMQ
+builder.Services.AddSingleton<RabbitMQPersistentConnection>(sp => {
+    var logger = sp.GetRequiredService<ILogger<RabbitMQPersistentConnection>>();
+    var factory = new ConnectionFactory() { HostName = "rabbitmq" };
+
+    return new RabbitMQPersistentConnection(logger, factory);
+});
+
+builder.Services.AddScoped<RabbitMQService>();
+
+// Controllers
 builder.Services.AddControllers(options => {
     options.ReturnHttpNotAcceptable = true;
 }).AddNewtonsoftJson();
 
 // HttpClient
 builder.Services.AddHttpClient("Wordpress", httpClient => {
-    httpClient.BaseAddress = new Uri("http://frontend-wordpress-1/wp-json");
-    httpClient.DefaultRequestHeaders.Add(
-        HeaderNames.Accept, "application/json"
-    );
+    httpClient.BaseAddress = new Uri("http://wordpress:80/wp-json"); // TO change to 8080 in prod.
+    httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
+
 });
 
 builder.Services.AddHttpClient("UuidMasterApi", httpClient => {
-    httpClient.BaseAddress = new Uri("http://uuidmasterapi-api-1:5000/api");
-    httpClient.DefaultRequestHeaders.Add(
-        HeaderNames.Accept, "application/json"
-    );
+    httpClient.BaseAddress = new Uri("http://api:5000/api");
+    httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
 });
 
+// UuidMasterApi service.
+builder.Services.AddScoped<UuidMasterApiService>();
+
+// XML service.
+builder.Services.AddScoped<XMLService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -38,13 +54,13 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UsePathBase("/api");
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UsePathBase("/api");
 
 app.UseRouting();
 
@@ -53,6 +69,8 @@ app.UseAuthorization();
 app.UseEndpoints(endpoints => {
     endpoints.MapControllers();
 });
+
+
 
 // app.Run(async (context) => {
 //    await context.Response.WriteAsync("Hello from producer!");
