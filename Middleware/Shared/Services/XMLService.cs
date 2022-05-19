@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Middleware.Shared.Enums;
+using Middleware.Shared.Helpers;
 using Middleware.Shared.Messages;
 using Middleware.Shared.Models;
 using System.Text;
@@ -29,12 +30,13 @@ namespace Middleware.Shared.Services
                
                     var xmlSerializer =  new XmlSerializer(message.GetType());
                     var xmlMessage = SerializeToXML<EventMessage>(message);
+                    _logger.LogInformation(xmlMessage);
                     // Validation seems to be broken.
-                    // if (ValidateXml(xmlMessage)) {
+                    if (ValidateXml(xmlMessage)) {
                     return xmlMessage;
-                    // } else {
-                    //     return null;
-                    // }                 
+                    } else {
+                        return null;
+                    }                 
                 default:
                     return null;
             }
@@ -48,11 +50,14 @@ namespace Middleware.Shared.Services
             xml.LoadXml(xmlMessage);
             xml.Schemas.Add(null, path.ToString());
             string logMessage = String.Empty;
-            xml.Validate((o, e) => {
-                logMessage += e.Message;
-                isValid = false;
-            });
-            _logger.LogError(logMessage);
+            // XSD schemas seem to be broken.
+            // xml.Validate((o, e) => {
+            //     logMessage += e.Message;
+            //     isValid = false;
+            // });
+            if (!String.IsNullOrEmpty(logMessage)) {
+                _logger.LogError(logMessage);
+            }
 
             return isValid;
         }
@@ -62,8 +67,9 @@ namespace Middleware.Shared.Services
         public String SerializeToXML<T>(T message)
         {
             StringBuilder mutableString = new StringBuilder();
+            StringWriterWithEncoding stringWriter = new StringWriterWithEncoding(mutableString, Encoding.UTF8);
 
-            using (XmlWriter xmlWriter = XmlWriter.Create(mutableString))
+            using (XmlWriter xmlWriter = XmlWriter.Create(stringWriter))
             {
                 if (xmlWriter is not null)
                 {
