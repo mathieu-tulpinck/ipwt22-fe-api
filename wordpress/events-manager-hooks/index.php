@@ -76,7 +76,7 @@ function notify_event_delete($post_id) {
         'method' => 'DELETE',
         'headers' => $headers     
     );
-    wp_remote_request(PRODUCER_URL . "/api/events/{$event->id}", $args);
+    wp_remote_request("http://producer:5000/api/events/{$event->id}", $args);
 }
 
 function send_event_payload($event, $attributes, $event_start, $event_end, $status, $method) {
@@ -102,7 +102,7 @@ function send_event_payload($event, $attributes, $event_start, $event_end, $stat
             'data_format' => 'body'
         );
 
-        wp_remote_post(PRODUCER_URL . "/api/events", $args);
+        wp_remote_post("http://producer:5000/api/events", $args);
     } else if ($method == 'UPDATE') {
         $attributes = array_combine(
             array_map(
@@ -124,7 +124,7 @@ function send_event_payload($event, $attributes, $event_start, $event_end, $stat
             'data_format' => 'body'
         );
         
-        wp_remote_request(PRODUCER_URL . "/api/events/{$event->event_id}", $args);
+        wp_remote_request("http://producer:5000/api/events/{$event->event_id}", $args);
     }
 }
 
@@ -167,7 +167,7 @@ function notify_booking_deleted ($result, $booking) {
         'method' => 'DELETE',
         'headers' => $headers     
     );
-    wp_remote_request(PRODUCER_URL . "/api/bookings/{$booking->id}", $args);
+    wp_remote_request("http://producer:5000/api/bookings/{$booking->id}", $args);
 
     return $result;
 }
@@ -193,7 +193,7 @@ function send_booking_payload($booking_id, $attributes, $method) {
             'body' => $body
         );
 
-        wp_remote_post(PRODUCER_URL . "/api/bookings", $args);
+        wp_remote_post("http://producer:5000/api/bookings", $args);
     } else if ($method == 'UPDATE') {
         $body = wp_json_encode($attributes);
 
@@ -204,11 +204,7 @@ function send_booking_payload($booking_id, $attributes, $method) {
             'data_format' => 'body'
         );
         
-        wp_remote_request(PRODUCER_URL . "/api/bookings/{$booking_id}", $args);
+        wp_remote_request("http://producer:5000/api/bookings/{$booking_id}", $args);
     }
-
-
-
-    
 }
 

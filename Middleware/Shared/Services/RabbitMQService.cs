@@ -18,7 +18,7 @@ namespace Middleware.Shared.Services
             _rbmqConnection = rbmqConnection ?? throw new ArgumentNullException(nameof(rbmqConnection));    
         }
 
-        public void InitializeBroker(ExchangeName exchangeName, QueueName queueName, RoutingKey routingKey)
+        public void ConfigureBroker(ExchangeName exchangeName, QueueName queueName, RoutingKey routingKey)
         {
             if (!_rbmqConnection.IsConnected) {
                 _rbmqConnection.TryConnect();

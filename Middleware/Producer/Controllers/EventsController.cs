@@ -57,7 +57,7 @@ namespace Middleware.Producer.Controllers
                 var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, (Guid)organiserUuid!);
                 if (message is not null) {
                     _logger.LogInformation("Producer successfully serialized the message.");
-                    _rbmqService.InitializeBroker(ExchangeName.FrontEnd, QueueName.FrontEndEvents, RoutingKey.FrontEndEvents);
+                    _rbmqService.ConfigureBroker(ExchangeName.FrontEnd, QueueName.FrontEndEvents, RoutingKey.FrontEndEvents);
                     _rbmqService.PublishMessage(ExchangeName.FrontEnd, RoutingKey.FrontEndEvents, message);
                     return NoContent();
                 } else {

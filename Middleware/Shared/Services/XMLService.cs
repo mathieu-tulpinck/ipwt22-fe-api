@@ -29,7 +29,6 @@ namespace Middleware.Shared.Services
                
                     var xmlSerializer =  new XmlSerializer(message.GetType());
                     var xmlMessage = SerializeToXML<EventMessage>(message);
-                    _logger.LogInformation(xmlMessage);
                     // Validation seems to be broken.
                     // if (ValidateXml(xmlMessage)) {
                     return xmlMessage;

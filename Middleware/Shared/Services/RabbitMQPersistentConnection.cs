@@ -22,6 +22,13 @@ namespace Middleware.Shared.Services
             }
         }
 
+        public bool IsConnected
+        {
+            get {
+                return _connection is not null && _connection.IsOpen && !_disposed;
+            }
+        }
+
         public bool TryConnect()
         {
             try {
@@ -29,7 +36,7 @@ namespace Middleware.Shared.Services
                 _connection = _connectionFactory.CreateConnection();
             } catch (BrokerUnreachableException e) {
                 Thread.Sleep(5000);
-                _logger.LogInformation("RabbitMQ Client is trying to reconnect");
+                _logger.LogInformation(e.Message);
                 _connection = _connectionFactory.CreateConnection();
             }
 
@@ -47,21 +54,13 @@ namespace Middleware.Shared.Services
             }
         }
 
-        public bool IsConnected
-        {
-            get {
-                return _connection is not null && _connection.IsOpen && !_disposed;
-            }
-        }
-
-        
         public IModel CreateModel()
         {
             if (!IsConnected) {
                 throw new InvalidOperationException("No RabbitMQ connection is available to created a model.");
             }
 
-            return _connection.CreateModel();
+            return _connection!.CreateModel();
         }
 
         public void Disconnect()
@@ -76,36 +75,33 @@ namespace Middleware.Shared.Services
         {
             if (_disposed) return;
 
-            _disposed = true;
-
             try {
                 _connection.Dispose();
+                 _disposed = true;
             } catch (IOException ex) {
                 _logger.LogError(ex.ToString());
             }
         }
 
-        private void OnConnectionBlocked(object sender, ConnectionBlockedEventArgs e)
+        private void OnConnectionBlocked(object? sender, ConnectionBlockedEventArgs e)
         {
             if (_disposed) return;
             _logger.LogError("A RabbitMQ connection is blocked. Trying to re-connect...");
             TryConnect();
         }
 
-        void OnConnectionException(object sender, CallbackExceptionEventArgs e)
+        private void OnConnectionException(object? sender, CallbackExceptionEventArgs e)
         {
             if (_disposed) return;
             _logger.LogError("A RabbitMQ connection threw an exception. Trying to re-connect...");
             TryConnect();
         }
 
-        void OnConnectionShutdown(object sender, ShutdownEventArgs reason)
+        private void OnConnectionShutdown(object? sender, ShutdownEventArgs reason)
         {
             if (_disposed) return;
             _logger.LogError("A RabbitMQ connection was destroyed. Trying to re-connect...");
             TryConnect();
         }
-
-
     }
 }
