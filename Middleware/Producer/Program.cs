@@ -19,7 +19,7 @@ builder.Services.AddControllers(options => {
 
 // HttpClient
 builder.Services.AddHttpClient("Wordpress", httpClient => {
-    httpClient.BaseAddress = new Uri("http://wordpress:80/wp-json");
+    httpClient.BaseAddress = new Uri("http://wordpress:80/wp-json"); // TO change to 8080 in prod.
     httpClient.DefaultRequestHeaders.Add(HeaderNames.Accept, "application/json");
 
 });
@@ -41,13 +41,13 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UsePathBase("/api");
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UsePathBase("/api");
 
 app.UseRouting();
 
@@ -56,6 +56,8 @@ app.UseAuthorization();
 app.UseEndpoints(endpoints => {
     endpoints.MapControllers();
 });
+
+
 
 // app.Run(async (context) => {
 //    await context.Response.WriteAsync("Hello from producer!");

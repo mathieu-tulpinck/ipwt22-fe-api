@@ -1,5 +1,6 @@
 using static System.Net.Mime.MediaTypeNames;
 using Microsoft.AspNetCore.JsonPatch;
+using Middleware.Shared.Enums;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
@@ -11,9 +12,9 @@ namespace Middleware.Shared.Services
 {
     public class UuidMasterApiService
     {
-        public async Task<Resource?> GetResourceQueryString(HttpClient umHttpClient, string entityType, int sourceEntityId)
+        public async Task<Resource?> GetResourceQueryString(HttpClient umHttpClient, Source source, EntityType entityType, int sourceEntityId)
         {
-            var response = await umHttpClient.GetAsync($"resources/search?source=FrontEnd&entityType={entityType}&sourceEntityId={sourceEntityId}");
+            var response = await umHttpClient.GetAsync($"resources/search?source={source}&entityType={entityType}&sourceEntityId={sourceEntityId}");
             if(response.StatusCode == HttpStatusCode.NotFound) {
                 return null;
             }

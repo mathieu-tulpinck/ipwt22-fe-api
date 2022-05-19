@@ -68,20 +68,22 @@ services:
       - frontend
       - uuidmasterapi
       - rabbitmq
-  consumer:
-    depends_on:
-      - wordpress
-    build:
-      context: ./Middleware
-      dockerfile: ConsumerDockerfile
-    ports: # replace by expose
-      - "5004:5000"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-    networks:
-      - frontend
-      - uuidmasterapi
-      - rabbitmq
+    volumes:
+      - ./Middleware/Shared/XMLSchemas:/app/XMLSchemas
+  # consumer:
+  #   depends_on:
+  #     - wordpress
+  #   build:
+  #     context: ./Middleware
+  #     dockerfile: ConsumerDockerfile
+  #   ports: # replace by expose
+  #     - "5004:5000"
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #   networks:
+  #     - frontend
+  #     - uuidmasterapi
+  #     - rabbitmq
   # reverseproxy:
   #   depends_on:
   #     - producer

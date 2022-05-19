@@ -1,43 +1,61 @@
+using Microsoft.Extensions.Logging;
 using Middleware.Shared.Enums;
 using Middleware.Shared.Messages;
 using Middleware.Shared.Models;
 using System.Text;
 using System.Xml;
+using System.Xml.Schema;
 using System.Xml.Serialization;
 
 namespace Middleware.Shared.Services
 {
     public class XMLService
     {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly UuidMasterApiService _umService;
-        
-        public XMLService(UuidMasterApiService umService, IHttpClientFactory httpClientFactory)
-        {
-            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-            _umService = umService ?? throw new ArgumentNullException(nameof(umService));
-        }
-        
-        public async Task<string?> PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod)
-        {
-            var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
+        private readonly ILogger<XMLService> _logger;
 
+        public XMLService(ILogger<XMLService> logger)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+        // dynamic dto is used to accomodate updateDto from patch action.
+        public String? PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod, Guid organiserUuid)
+        {
             switch (resource.EntityType)
             {
                 // attendee
-                case EntityType.Event:
-                    var organiserResource = await _umService.GetResourceQueryString(umHttpClient, "organiser", dto.Owner);
-                    var message = new EventMessage(resource, dto, crudMethod, organiserResource.Uuid);
-                    
-                    // XML should be validated programmatically based on xsd. TODO.
+
+                case EntityType.EVENT:
+                    var message = new EventMessage(resource, dto, crudMethod, organiserUuid);
                
                     var xmlSerializer =  new XmlSerializer(message.GetType());
                     var xmlMessage = SerializeToXML<EventMessage>(message);
-
+                    _logger.LogInformation(xmlMessage);
+                    // Validation seems to be broken.
+                    // if (ValidateXml(xmlMessage)) {
                     return xmlMessage;
+                    // } else {
+                    //     return null;
+                    // }                 
                 default:
                     return null;
             }
+        }
+
+        private bool ValidateXml(string xmlMessage)
+        {
+            bool isValid = true;
+            var path = new Uri(AppContext.BaseDirectory + "XMLSchemas/SessionEvent_v3.xsd");
+            XmlDocument xml = new XmlDocument();
+            xml.LoadXml(xmlMessage);
+            xml.Schemas.Add(null, path.ToString());
+            string logMessage = String.Empty;
+            xml.Validate((o, e) => {
+                logMessage += e.Message;
+                isValid = false;
+            });
+            _logger.LogError(logMessage);
+
+            return isValid;
         }
 
 
@@ -46,11 +64,9 @@ namespace Middleware.Shared.Services
         {
             StringBuilder mutableString = new StringBuilder();
 
-            XmlWriterSettings settings = new XmlWriterSettings { Encoding = Encoding.UTF8, Indent = true };
-
-            using (XmlWriter xmlWriter = XmlWriter.Create(mutableString, settings))
+            using (XmlWriter xmlWriter = XmlWriter.Create(mutableString))
             {
-                if (xmlWriter != null)
+                if (xmlWriter is not null)
                 {
                     new XmlSerializer(typeof(T)).Serialize(xmlWriter, message);
                 }

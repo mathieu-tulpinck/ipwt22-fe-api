@@ -6,23 +6,18 @@ using System.ComponentModel.DataAnnotations;
 namespace Middleware.Shared.Models
 {
     // Use terms of xsd
-    public class EventDto
+    public class EventUpdateDto
     {
-        [Required]
         public int Id { get; set; }
         [Required]
         public int Owner { get; set; }
-        [Required]
-        public bool Status { get; set; }
-        [Required]
+        public bool? Status { get; set; } = null;
         [MaxLength(50)]
-        public string Name { get; set; } = string.Empty;
-        [Required]
+        public string? Name { get; set; } = null;
         [JsonConverter(typeof(UnixDateTimeConverter))]
-        public DateTime Start { get; set; }
-        [Required]
+        public DateTime? Start { get; set; } = null;
         [JsonConverter(typeof(UnixDateTimeConverter))]
-        public DateTime End { get; set; }
+        public DateTime? End { get; set; } = null;
 
         public override string ToString()
         {

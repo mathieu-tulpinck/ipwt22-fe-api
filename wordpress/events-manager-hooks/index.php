@@ -16,15 +16,13 @@ function notify_event($result, $event) {
     if ($created == $modified && $event->event_status == 1) {
         $status = true;
         $method = 'CREATE';
-        $attributes = json_decode(json_encode($event), true);
-        send_event_payload($event->event_id, $attributes, $event_start, $event_end, $status, $method);
+        send_event_payload($event, $attributes = [], $event_start, $event_end, $status, $method);
     } 
     // Event placed in draft.
     else if (is_null($event->event_status)) {
         $status = false;
         $method = 'UPDATE';
-        $attributes = array('status' => $event->event_status);
-        send_event_payload($event->event_id, $attributes, $event_start, $event_end, $status, $method);
+        send_event_payload($event, $attributes = [], $event_start, $event_end, $status, $method);
     }
 
     return $result;
@@ -60,7 +58,7 @@ function notify_event_update($event) {
             foreach (array_keys($diff) as $key) {
                 $attributes[$key] = $event_array_intersect[$key];
             };
-            send_event_payload($event_id, $attributes, $event_start, $event_end, $status, $method);
+            send_event_payload($event, $attributes, $event_start, $event_end, $status, $method);
         }
     } 
 }
@@ -81,17 +79,17 @@ function notify_event_delete($post_id) {
     wp_remote_request(PRODUCER_URL . "/api/events/{$event->id}", $args);
 }
 
-function send_event_payload($event_id, $attributes, $event_start, $event_end, $status, $method) {
+function send_event_payload($event, $attributes, $event_start, $event_end, $status, $method) {
     $headers = array(
         'Content-Type' => 'application/json'
     );
 
     if ($method == 'CREATE') {
         $body = array(
-            'id' => $attributes['event_id'],
-            'owner' => $attributes['event_owner'], // OrganiserUuid
+            'id' => $event->event_id,
+            'owner' => $event->event_owner, // OrganiserUuid
             'status' => $status, // IsActive
-            'name' => $attributes['event_name'], // Title
+            'name' => $event->event_name, // Title
             'start' => $event_start, // StartDateUTC
             'end' => $event_end, // EndDateUTC
         );
@@ -106,6 +104,17 @@ function send_event_payload($event_id, $attributes, $event_start, $event_end, $s
 
         wp_remote_post(PRODUCER_URL . "/api/events", $args);
     } else if ($method == 'UPDATE') {
+        $attributes = array_combine(
+            array_map(
+                function($subject) {
+                    return str_replace("event_", "", $subject);
+                }, array_keys($attributes)
+            ), array_values($attributes)
+        );
+        $attributes + array(
+            'id' => $event->event_id,
+            'owner' => $event->owner
+        ); // Business rule: event owner should be allowed to change. Not enforceable in settings.
         $body = wp_json_encode($attributes);
 
         $args = array(
@@ -115,7 +124,7 @@ function send_event_payload($event_id, $attributes, $event_start, $event_end, $s
             'data_format' => 'body'
         );
         
-        wp_remote_request(PRODUCER_URL . "/api/events/{$event_id}", $args);
+        wp_remote_request(PRODUCER_URL . "/api/events/{$event->event_id}", $args);
     }
 }
 

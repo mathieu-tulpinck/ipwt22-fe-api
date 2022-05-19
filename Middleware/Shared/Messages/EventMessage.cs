@@ -39,6 +39,8 @@ namespace Middleware.Shared.Messages
         public DateTime EndDateUTC { get; set; }
  
 
+            public EventMessage() {}
+            
             public EventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid organiserUuid)
             {
                 UUID_nr = resource.Uuid.ToString();
