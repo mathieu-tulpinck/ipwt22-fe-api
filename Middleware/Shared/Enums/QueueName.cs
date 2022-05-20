@@ -2,6 +2,9 @@ namespace Middleware.Shared.Enums
 {
     public enum QueueName
     {
-        SessionEvents
+        CrmSession,
+        PlanningSession,
+        CrmAttendee,
+        PlanningAttendee
     }
 }
