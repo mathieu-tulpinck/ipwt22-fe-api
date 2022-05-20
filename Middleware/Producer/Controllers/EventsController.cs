@@ -57,8 +57,13 @@ namespace Middleware.Producer.Controllers
                 var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, (Guid)organiserUuid!);
                 if (message is not null) {
                     _logger.LogInformation("Producer successfully serialized the message.");
-                    _rbmqService.ConfigureBroker(ExchangeName.FrontEnd, QueueName.SessionEvents, RoutingKey.SessionEvents);
-                    _rbmqService.PublishMessage(ExchangeName.FrontEnd, RoutingKey.SessionEvents, message);
+                    var bindings = new Dictionary<QueueName, RoutingKey>() {
+                        { QueueName.CrmSession, RoutingKey.CrmSession },
+                        { QueueName.PlanningSession, RoutingKey.PlanningSession }
+                    };
+                    var values = bindings.Values;
+                    _rbmqService.ConfigureBroker(ExchangeName.FrontSession, bindings);
+                    _rbmqService.PublishMessage(ExchangeName.FrontSession, bindings.Values, message);
                     return NoContent();
                 } else {
                     _logger.LogError($"Producer failed to serialize the message. {createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was not sent to the queue.");

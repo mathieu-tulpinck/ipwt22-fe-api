@@ -18,7 +18,7 @@ namespace Middleware.Shared.Services
             _rbmqConnection = rbmqConnection ?? throw new ArgumentNullException(nameof(rbmqConnection));    
         }
 
-        public void ConfigureBroker(ExchangeName exchangeName, QueueName queueName, RoutingKey routingKey)
+        public void ConfigureBroker(ExchangeName exchangeName, Dictionary<QueueName, RoutingKey> bindings)
         {
             if (!_rbmqConnection.IsConnected) {
                 _rbmqConnection.TryConnect();
@@ -29,22 +29,24 @@ namespace Middleware.Shared.Services
                     exchange: exchangeName.ToString(),
                     type: "direct"
                 );
-                _channel.QueueDeclare(
-                    queue: queueName.ToString(),
-                    durable: true,
+                foreach (var binding in bindings) {
+                    _channel.QueueDeclare(
+                    queue: binding.Key.ToString(),
+                    durable: false,
                     exclusive: false,
                     autoDelete: false,
                     arguments: null
-                );
-                _channel.QueueBind(
-                    queue: queueName.ToString(),
+                    );
+                     _channel.QueueBind(
+                    queue: binding.Key.ToString(),
                     exchange: exchangeName.ToString(),
-                    routingKey: routingKey.ToString()
-                );
+                    routingKey: binding.Value.ToString()
+                    );
+                }
             }
         }
 
-        public void PublishMessage(ExchangeName exchangeName, RoutingKey routingkey, string xmlMessage)
+        public void PublishMessage(ExchangeName exchangeName, Dictionary<QueueName, RoutingKey>.ValueCollection routingkeys, string xmlMessage)
         {
             if (!_rbmqConnection.IsConnected) {
                 _rbmqConnection.TryConnect();
@@ -57,17 +59,20 @@ namespace Middleware.Shared.Services
                     _logger.LogInformation("The RabbitMQ broker ack'ed the message.");
                 };
                 var body = Encoding.UTF8.GetBytes(xmlMessage);
-                _channel.BasicPublish(
+                foreach (var routingKey in routingkeys) {
+                    _channel.BasicPublish(
                     exchange: exchangeName.ToString(),
-                    routingKey: routingkey.ToString(),
+                    routingKey: routingKey.ToString(),
                     basicProperties: null,
                     body: body
-                );
-                try {
-                    _channel.WaitForConfirmsOrDie(new TimeSpan(100)); // 5 seconds
-                } catch (OperationInterruptedException e) {
-                    _logger.LogError(e.Message);
+                    );
                 }
+                // try {
+                //     _channel.WaitForConfirmsOrDie(new TimeSpan(100)); // 5 seconds
+                // } catch (OperationInterruptedException e) {
+                //     _logger.LogError(e.Message);
+                // }
+
             }
         }
 

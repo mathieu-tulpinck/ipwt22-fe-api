@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="SessionAttendeeEvent">
+		<xs:complexType>
+			<xs:sequence>
+
+				<xs:element name="UUID_Nr" >
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="32"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				
+				<xs:element type="xs:string" name="SourceEntityId"/>
+
+				<xs:element name="EntityType" >
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"></xs:maxLength>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="EntityVersion" >
+					<xs:simpleType>
+						<xs:restriction base="xs:nonNegativeInteger">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="Source">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="FRONTEND" />
+							<xs:enumeration value="CRM" />
+							<xs:enumeration value="PLANNING" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				
+				<xs:element name="Method">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="CREATE" />
+							<xs:enumeration value="UPDATE" />
+							<xs:enumeration value="DELETE" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				
+				<xs:element name="AttendeeUUID" >
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="32"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="SessionUUID">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="32"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="InvitationStatus">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="PENDING" />
+							<xs:enumeration value="ACCEPTED" />
+							<xs:enumeration value="DECLINED" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
