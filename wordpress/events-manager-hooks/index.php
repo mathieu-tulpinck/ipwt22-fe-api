@@ -140,7 +140,18 @@ add_filter('em_booking_save', 'notify_booking_created', 10, 3);
 function notify_booking_created ($count, $booking, $update) {
     $method = 'CREATE';
     $attributes = json_decode(json_encode($booking), true); // Convert to array.
-    send_booking_payload($booking->id, $booking, $method);
+    $meta = get_user_meta($booking->person_id);
+    $first_name = $meta['first_name'][0];
+    $last_name = $meta['last_name'][0];
+    $user_data = get_userdata($booking->person_id);
+    $email = $user_data->user_email;
+    $attributes + array (
+        'first_name' => $first_name,
+        'last_name' => $last_name,
+        'email' => $email
+    );
+    
+    send_booking_payload($booking->id, $attributes, $method);
 
     return $count;
 }
@@ -151,8 +162,17 @@ function notify_booking_created ($count, $booking, $update) {
 function notify_booking_status($result, $booking) {
     $method = 'UPDATE';
     $attributes = array('bookingStatus' => $booking->booking_status);
+    $meta = get_user_meta($booking->person_id);
+    $first_name = $meta['first_name'][0];
+    $last_name = $meta['last_name'][0];
+    $user_data = get_userdata($booking->person_id);
+    $email = $user_data->user_email;
+    $attributes + array (
+        'first_name' => $first_name,
+        'last_name' => $last_name,
+        'email' => $email
+    );
     send_booking_payload($booking->id, $attributes, $method);
-
     return $result;
 }
 
@@ -184,6 +204,9 @@ function send_booking_payload($booking_id, $attributes, $method) {
             'personId' => $attributes['person_id'], // Name, LastName, Email, VatNumber
             'bookingSpaces' => $attributes['booking_spaces'],
             'bookingStatus' => $attributes['booking_status'], // InvitationStatus
+            'firstName' => $attributes['first_name'],
+            'lastName' => $attributes['last_name'],
+            'email' => $attributes['email']
         );  
 
         $body = wp_json_encode($body);
@@ -207,4 +230,3 @@ function send_booking_payload($booking_id, $attributes, $method) {
         wp_remote_request("http://producer:5000/api/bookings/{$booking_id}", $args);
     }
 }
-

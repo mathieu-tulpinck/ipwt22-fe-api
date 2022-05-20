@@ -8,5 +8,6 @@ namespace Middleware.Shared.Enums
     {
         ORGANISER,
         EVENT,
+        ATTENDEE
     }
 }
