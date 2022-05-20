@@ -8,28 +8,22 @@ namespace Middleware.Shared.Messages
     [Serializable]
     [XmlType("SessionEvent")]
     [XmlRoot("SessionEvent")]
-    public class EventMessage
+    public class SessionEventMessage
     {
         [MinLength(32)]
-        [XmlElement("UUID_nr")]
-        public string UUID_nr { get; set; } = String.Empty;
+        [XmlElement("UUID_Nr")]
+        public string UUID_Nr { get; set; } = String.Empty;
+        [XmlElement("SourceEntityId")]
+        public string SourceEntityId { get; set; } = String.Empty;
+        [XmlElement("EntityType")]
+        public EntityType EntityType { get; set; }
+        [XmlElement("EntityVersion")]
+        public int EntityVersion { get ; set; }
         [XmlElement("Source")]
         public Source Source { get; set; }
         [MaxLength(30)]
-        [XmlElement("EntityType")]
-        public EntityType EntityType { get; set; }
-        [XmlElement("SourceEntityId")]
-        public int SourceEntityId { get; set; }
-        [XmlElement("EntityVersion")]
-        public int EntityVersion { get ; set; }
         [XmlElement("Method")]
         public CrudMethod Method { get; set; }
-        
-        [MinLength(32)]
-        [XmlElement("OrganiserUuid")]
-        public string OrganiserUUID { get; set; } = String.Empty;
-        [XmlElement("IsActive")]    
-        public bool IsActive { get; set; }
         [MaxLength(30)]
         [XmlElement("Title")]
         public string Title { get; set; } = String.Empty;
@@ -37,24 +31,27 @@ namespace Middleware.Shared.Messages
         public DateTime StartDateUTC { get; set; }
         [XmlElement("EndDateUTC", DataType = "dateTime")]
         public DateTime EndDateUTC { get; set; }
- 
+        [MinLength(32)]
+        [XmlElement("OrganiserUUID")]
+        public string OrganiserUUID { get; set; } = String.Empty;
+        [XmlElement("IsActive")]    
+        public bool IsActive { get; set; }
 
-            public EventMessage() {}
+            public SessionEventMessage() {}
             
-            public EventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid organiserUuid)
+            public SessionEventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid organiserUuid)
             {
-                UUID_nr = resource.Uuid.ToString();
-                Source = resource.Source;
+                UUID_Nr = resource.Uuid.ToString();
+                SourceEntityId = resource.SourceEntityId.ToString();
                 EntityType = resource.EntityType;
-                SourceEntityId = resource.SourceEntityId;
                 EntityVersion = resource.EntityVersion;
+                Source = resource.Source;
                 Method = crudMethod;
-
-                OrganiserUUID = organiserUuid.ToString();
-                IsActive = eventDto.Status;
                 Title = eventDto.Name;
                 StartDateUTC = eventDto.Start;
                 EndDateUTC = eventDto.End;
+                OrganiserUUID = organiserUuid.ToString();
+                IsActive = eventDto.Status;
             }
     }
 }

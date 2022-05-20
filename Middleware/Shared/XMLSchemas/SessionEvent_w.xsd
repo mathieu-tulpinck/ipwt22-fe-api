@@ -1,0 +1,80 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="SessionEvent">
+		<xs:complexType>
+			<xs:sequence>
+				
+				<xs:element name="UUID_Nr" >
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="32"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element type="xs:string" name="SourceEntityId"/>
+
+				<xs:element name="EntityType" >
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"></xs:maxLength>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="EntityVersion" >
+					<xs:simpleType>
+						<xs:restriction base="xs:nonNegativeInteger">
+							<xs:minInclusive value="1"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="Source">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="FRONTEND" />
+							<xs:enumeration value="CRM" />
+							<xs:enumeration value="PLANNING" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<xs:element name="Method">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:enumeration value="CREATE" />
+							<xs:enumeration value="UPDATE" />
+							<xs:enumeration value="DELETE" />
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+				
+				<xs:element name="Title" >
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:maxLength value="30"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<!-- StartDateUTC volgens dateTime -->
+				<xs:element name="StartDateUTC" type ="xs:dateTime" />
+
+				<!-- EndDateUTC volgens dateTime-->
+				<xs:element name="EndDateUTC" type ="xs:dateTime" />
+
+				<xs:element name="OrganiserUUID">
+					<xs:simpleType>
+						<xs:restriction base="xs:string">
+							<xs:minLength value="32"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+
+				<!-- IsActive kan enkel 0 of 1 zijn -->
+				<xs:element name="IsActive" type ="xs:boolean" />
+
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

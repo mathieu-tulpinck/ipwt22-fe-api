@@ -26,12 +26,11 @@ namespace Middleware.Shared.Services
                 // attendee
 
                 case EntityType.EVENT:
-                    var message = new EventMessage(resource, dto, crudMethod, organiserUuid);
+                    var message = new SessionEventMessage(resource, dto, crudMethod, organiserUuid);
                
                     var xmlSerializer =  new XmlSerializer(message.GetType());
-                    var xmlMessage = SerializeToXML<EventMessage>(message);
+                    var xmlMessage = SerializeToXML<SessionEventMessage>(message);
                     _logger.LogInformation(xmlMessage);
-                    // Validation seems to be broken.
                     if (ValidateXml(xmlMessage)) {
                     return xmlMessage;
                     } else {
@@ -45,16 +44,15 @@ namespace Middleware.Shared.Services
         private bool ValidateXml(string xmlMessage)
         {
             bool isValid = true;
-            var path = new Uri(AppContext.BaseDirectory + "XMLSchemas/SessionEvent_v3.xsd");
+            var path = new Uri(AppContext.BaseDirectory + "XMLSchemas/SessionEvent_w.xsd");
             XmlDocument xml = new XmlDocument();
             xml.LoadXml(xmlMessage);
             xml.Schemas.Add(null, path.ToString());
             string logMessage = String.Empty;
-            // XSD schemas seem to be broken.
-            // xml.Validate((o, e) => {
-            //     logMessage += e.Message;
-            //     isValid = false;
-            // });
+            xml.Validate((o, e) => {
+                logMessage += e.Message;
+                isValid = false;
+            });
             if (!String.IsNullOrEmpty(logMessage)) {
                 _logger.LogError(logMessage);
             }
@@ -80,13 +78,13 @@ namespace Middleware.Shared.Services
             return mutableString.ToString();
         }
 
-        public void DeserializeFromXML<T>(string xmlString, out T eventMessage) where T : class
+        public void DeserializeFromXML<T>(string xmlString, out T sessionEventMessage) where T : class
         {
             XmlSerializer xmlSerializer = new XmlSerializer(typeof (T));
 
             using (MemoryStream memoryStream = new MemoryStream(StringToUTF8ByteArray(xmlString)))
             {
-                eventMessage = xmlSerializer.Deserialize(memoryStream) as T;
+                sessionEventMessage = xmlSerializer.Deserialize(memoryStream) as T;
             }
         }
 
