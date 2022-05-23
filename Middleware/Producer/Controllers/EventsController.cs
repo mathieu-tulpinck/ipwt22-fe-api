@@ -48,7 +48,7 @@ namespace Middleware.Producer.Controllers
                 organiserUuid = organiserResource.Uuid;
             }
 
-            var eventResourceToCreate =  new ResourceDto(Source.FRONTEND, EntityType.EVENT, eventDto.Id, 1);
+            var eventResourceToCreate =  new ResourceDto(Source.FRONTEND, EntityType.SESSION, eventDto.Id, 1);
             var createdEventResource = await _umService.CreateResource(umHttpClient, eventResourceToCreate);
             
             // prepare and send rabbitmq message relating to new event.
@@ -89,7 +89,7 @@ namespace Middleware.Producer.Controllers
             //     _logger.LogInformation((string) field.Value);
             // }
             
-            var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.EVENT, sourceEntityId);
+            var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.SESSION, sourceEntityId);
             if (eventResource is not null) {
                 var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventUpdateDto.Owner);
                 if (organiserResource is not null) {
@@ -108,7 +108,7 @@ namespace Middleware.Producer.Controllers
                     return Problem();
                 }
             } else {
-                _logger.LogError($"Producer failed to update the resource into the database. {EntityType.EVENT} with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db. ");
+                _logger.LogError($"Producer failed to update the resource into the database. {EntityType.SESSION} with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db. ");
                 return Problem();
             }
 

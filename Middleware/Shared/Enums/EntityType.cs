@@ -8,7 +8,7 @@ namespace Middleware.Shared.Enums
     {
         ATTENDEE,
         ATTENDEESESSION,
-        EVENT,
         ORGANISER,
+        SESSION
     }
 }

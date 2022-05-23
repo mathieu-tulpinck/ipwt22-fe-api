@@ -34,7 +34,7 @@ namespace Middleware.Shared.Messages
 
         public SessionAttendeeEventMessage() {}
         
-        public SessionAttendeeEventMessage(Resource resource, BookingDto bookingDto, CrudMethod crudMethod, Guid eventUuid)
+        public SessionAttendeeEventMessage(Resource resource, BookingDto bookingDto, CrudMethod crudMethod, Guid eventUuid, Guid attendeeUuid)
         {
             UUID_Nr = resource.Uuid.ToString();
             SourceEntityId = resource.SourceEntityId.ToString();
@@ -42,7 +42,7 @@ namespace Middleware.Shared.Messages
             EntityVersion = resource.EntityVersion;
             Source = resource.Source;
             Method = crudMethod;
-            AttendeeUUID = resource.Uuid.ToString();
+            AttendeeUUID = attendeeUuid.ToString();
             SessionUUID = eventUuid.ToString();
             switch (bookingDto.BookingStatus) {
                 case 0:
