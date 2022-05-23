@@ -4,6 +4,7 @@
 /Middleware/Consumer/appsettings.json
 /Middleware/Consumer/bin
 /Middleware/Consumer/obj
+/Middleware/ConsumerBak
 /Middleware/Producer/appsettings.Development.json
 /Middleware/Producer/appsettings.json
 /Middleware/Producer/bin
@@ -13,3 +14,4 @@
 docker-compose.draft.yml
 FrontEnd.code-workspace
 wordpress/playground.php
+Middleware/ConsumerDockerfileBak

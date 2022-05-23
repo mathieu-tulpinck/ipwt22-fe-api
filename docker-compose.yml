@@ -54,7 +54,7 @@ services:
     volumes:
       - wordpress_data:/var/www/html
   producer:
-    depends_on: # Not possible to depend on service defined in other file.
+    depends_on:
       - wordpress
       # - rabbitmq # Not possible to depend on service defined in other file.
     build:
@@ -68,20 +68,20 @@ services:
       - frontend
       - uuidmasterapi
       - rabbitmq
-  # consumer:
-  #   depends_on:
-  #     - wordpress
-  #   build:
-  #     context: ./Middleware
-  #     dockerfile: ConsumerDockerfile
-  #   ports: # replace by expose
-  #     - "5004:5000"
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #   networks:
-  #     - frontend
-  #     - uuidmasterapi
-  #     - rabbitmq
+  consumer:
+    depends_on:
+      - wordpress
+    build:
+      context: ./Middleware
+      dockerfile: ConsumerDockerfile
+    # ports: # replace by expose
+    #   - "5004:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - frontend
+      - uuidmasterapi
+      - rabbitmq
   # reverseproxy:
   #   depends_on:
   #     - producer
