@@ -6,8 +6,9 @@ namespace Middleware.Shared.Enums
     [JsonConverter(typeof(StringEnumConverter))]
     public enum EntityType
     {
-        ORGANISER,
+        ATTENDEE,
+        ATTENDEESESSION,
         EVENT,
-        ATTENDEE
+        ORGANISER,
     }
 }

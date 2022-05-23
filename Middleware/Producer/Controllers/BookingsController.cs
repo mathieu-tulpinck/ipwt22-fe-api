@@ -30,7 +30,8 @@ namespace Middleware.Producer.Controllers
         public async Task<ActionResult> CreateBooking(BookingDto bookingDto)
         {
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
-            var attendeeResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ATTENDEE, bookingDto.Id, 1);
+            bool attendeeMessageSent;
+            var attendeeResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ATTENDEE, bookingDto.PersonId, 1);
             var createdAttendeeResource = await _umService.CreateResource(umHttpClient, attendeeResourceToCreate);
             if (createdAttendeeResource is not null) {
                 _logger.LogInformation($"{createdAttendeeResource.EntityType} with Uuid {createdAttendeeResource.Uuid} was added to UuidMasterApi db.");
@@ -44,16 +45,51 @@ namespace Middleware.Producer.Controllers
                     _rbmqService.ConfigureBroker(ExchangeName.FrontAttendee, bindings);
                     _rbmqService.PublishMessage(ExchangeName.FrontAttendee, bindings.Values, message);
                                 
-                    return NoContent();
+                    attendeeMessageSent = true;
                 } else {
                     _logger.LogError($"Producer failed to serialize the message. {createdAttendeeResource.EntityType} with Uuid {createdAttendeeResource.Uuid} was not sent to the queue.");
 
                     return Problem();
                 }                
-                
             } else {
                 _logger.LogError($"Producer failed to insert the resource into the database. {attendeeResourceToCreate.EntityType} with SourceEntityId {attendeeResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
 
+                return Problem();
+            }
+
+            if (attendeeMessageSent) {
+                var attendeeSessionResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ATTENDEESESSION, bookingDto.Id, 1);
+                var createdAttendeeSessionResource = await _umService.CreateResource(umHttpClient, attendeeSessionResourceToCreate);
+                var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.EVENT, bookingDto.EventId);
+                if (createdAttendeeSessionResource is not null) {
+                    if (eventResource is not null) {
+                        var message = _xmlService.PreparePayload(createdAttendeeSessionResource, bookingDto, CrudMethod.CREATE, eventUuid: eventResource.Uuid);
+                        if (message is not null) {
+                            _logger.LogInformation("Producer successfully serialized the message.");
+                            var bindings = new Dictionary<QueueName, RoutingKey>() {
+                                { QueueName.CrmAttendeeSession, RoutingKey.CrmAttendeeSession },
+                                { QueueName.PlanningAttendeeSession, RoutingKey.PlanningAttendeeSession }
+                            };
+                            _rbmqService.ConfigureBroker(ExchangeName.FrontAttendeeSession, bindings);
+                            _rbmqService.PublishMessage(ExchangeName.FrontAttendeeSession, bindings.Values, message);
+                                        
+                            return NoContent();
+                        } else {
+                            _logger.LogError($"Producer failed to serialize the message. {createdAttendeeResource.EntityType} with Uuid {createdAttendeeResource.Uuid} was not sent to the queue.");
+
+                            return Problem();
+                        }                
+                    } else {
+                        _logger.LogError($"Producer failed to serialize the message. {EntityType.EVENT} with SourceEntityId {bookingDto.EventId} does not exist in UuidMasterApi db.");
+
+                        return Problem();
+                    }
+                } else {
+                    _logger.LogError($"Producer failed to insert the resource into the database. {attendeeSessionResourceToCreate.EntityType} with SourceEntityId {attendeeSessionResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
+
+                    return Problem();
+                }
+            } else {
                 return Problem();
             }
         }

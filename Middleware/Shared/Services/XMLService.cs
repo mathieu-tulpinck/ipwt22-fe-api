@@ -19,7 +19,7 @@ namespace Middleware.Shared.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
         // dynamic dto is used to accomodate updateDto from patch action.
-        public String? PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod, Guid? organiserUuid = null)
+        public String? PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod, Guid? organiserUuid = null, Guid? eventUuid = null)
         {
             switch (resource.EntityType)
             {
@@ -41,6 +41,17 @@ namespace Middleware.Shared.Services
                     var xmlMessage = SerializeToXML<AttendeeEventMessage>(message);
                     _logger.LogInformation(xmlMessage); // Comment out in prod.
                     if (ValidateXml(xmlMessage, "AttendeeEvent_w.xsd")) {
+                        return xmlMessage;
+                    } else {
+                        return null;
+                    }
+                }
+                case EntityType.ATTENDEESESSION: {
+                    var message = new SessionAttendeeEventMessage(resource, dto, crudMethod, (Guid)eventUuid!);
+                    var xmlSerializer = new XmlSerializer(message.GetType());
+                    var xmlMessage = SerializeToXML<SessionAttendeeEventMessage>(message);
+                    _logger.LogInformation(xmlMessage); // Comment out in prod.
+                    if (ValidateXml(xmlMessage, "SessionAttendeeEvent_w.xsd")) {
                         return xmlMessage;
                     } else {
                         return null;

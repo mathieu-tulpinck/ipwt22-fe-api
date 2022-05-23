@@ -54,7 +54,7 @@ namespace Middleware.Producer.Controllers
             // prepare and send rabbitmq message relating to new event.
             if (createdEventResource is not null && organiserUuid is not null) {
                 _logger.LogInformation($"{createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
-                var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, (Guid)organiserUuid!);
+                var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, organiserUuid: (Guid)organiserUuid!);
                 if (message is not null) {
                     _logger.LogInformation("Producer successfully serialized the message.");
                     var bindings = new Dictionary<QueueName, RoutingKey>() {
@@ -97,7 +97,7 @@ namespace Middleware.Producer.Controllers
                     if (response) {
                         _logger.LogInformation($"Event with Uuid {eventResource.Uuid} was updated in UuidMasterApi db.");                    
                         // Send Rabbitmq message relating to updated event.
-                        var message = _xmlService.PreparePayload(eventResource, eventUpdateDto, CrudMethod.UPDATE, organiserResource.Uuid);
+                        var message = _xmlService.PreparePayload(eventResource, eventUpdateDto, CrudMethod.UPDATE, organiserUuid: organiserResource.Uuid);
                         return NoContent();
                     } else {
                         _logger.LogError($"Producer failed to update the resource into the database. {eventResource.EntityType} with SourceEntityId {eventResource.SourceEntityId} was not updated in UuidMasterApi db.");
