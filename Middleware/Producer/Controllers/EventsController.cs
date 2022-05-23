@@ -30,7 +30,7 @@ namespace Middleware.Producer.Controllers
         public async Task<ActionResult> CreateEvent(EventDto eventDto)
         {
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
-            Guid?organiserUuid = null;
+            Guid? organiserUuid = null;
             // If event owner is not known in UuidMasterApi, create it.
             var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner);
             if (organiserResource is null) {
@@ -61,7 +61,6 @@ namespace Middleware.Producer.Controllers
                         { QueueName.CrmSession, RoutingKey.CrmSession },
                         { QueueName.PlanningSession, RoutingKey.PlanningSession }
                     };
-                    var values = bindings.Values;
                     _rbmqService.ConfigureBroker(ExchangeName.FrontSession, bindings);
                     _rbmqService.PublishMessage(ExchangeName.FrontSession, bindings.Values, message);
                     return NoContent();

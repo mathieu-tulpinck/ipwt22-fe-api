@@ -139,17 +139,13 @@ add_filter('em_booking_save', 'notify_booking_created', 10, 3);
 
 function notify_booking_created ($count, $booking, $update) {
     $method = 'CREATE';
-    $attributes = json_decode(json_encode($booking), true); // Convert to array.
-    $meta = get_user_meta($booking->person_id);
-    $first_name = $meta['first_name'][0];
-    $last_name = $meta['last_name'][0];
+    $attributes = $booking->to_array();
+    $first_name = get_user_meta($booking->person_id, 'first_name', true);
+    $last_name = get_user_meta($booking->person_id, 'last_name', true);
     $user_data = get_userdata($booking->person_id);
-    $email = $user_data->user_email;
-    $attributes + array (
-        'first_name' => $first_name,
-        'last_name' => $last_name,
-        'email' => $email
-    );
+    $attributes['first_name'] = $first_name;
+    $attributes['last_name'] = $last_name;
+    $attributes['email'] = $user_data->user_email;;
     
     send_booking_payload($booking->id, $attributes, $method);
 
@@ -159,22 +155,22 @@ function notify_booking_created ($count, $booking, $update) {
 // Booking status updated.
 // add_filter('em_booking_set_status','notify_booking_status', 10, 2);
 
-function notify_booking_status($result, $booking) {
-    $method = 'UPDATE';
-    $attributes = array('bookingStatus' => $booking->booking_status);
-    $meta = get_user_meta($booking->person_id);
-    $first_name = $meta['first_name'][0];
-    $last_name = $meta['last_name'][0];
-    $user_data = get_userdata($booking->person_id);
-    $email = $user_data->user_email;
-    $attributes + array (
-        'first_name' => $first_name,
-        'last_name' => $last_name,
-        'email' => $email
-    );
-    send_booking_payload($booking->id, $attributes, $method);
-    return $result;
-}
+// function notify_booking_status($result, $booking) {
+//     $method = 'UPDATE';
+//     $attributes = array('bookingStatus' => $booking->booking_status);
+//     $meta = get_user_meta($booking->person_id);
+//     $first_name = $meta['first_name'][0];
+//     $last_name = $meta['last_name'][0];
+//     $user_data = get_userdata($booking->person_id);
+//     $email = $user_data->user_email;
+//     $attributes + array (
+//         'first_name' => $first_name,
+//         'last_name' => $last_name,
+//         'email' => $email
+//     );
+//     send_booking_payload($booking->id, $attributes, $method);
+//     return $result;
+// }
 
 // Booking deleted.
 // add_filter('em_booking_delete', 'notify_booking_deleted', 10, 2);

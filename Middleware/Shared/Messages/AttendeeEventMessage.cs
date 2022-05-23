@@ -15,10 +15,10 @@ namespace Middleware.Shared.Messages
         public string UUID_Nr { get; set; } = String.Empty;
         [XmlElement("SourceEntityId")]
         public string SourceEntityId { get; set; } = String.Empty;
-        [XmlElement("EntityType")]
-        public EntityType EntityType { get; set; }
         [XmlElement("EntityVersion")]
         public int EntityVersion { get ; set; }
+        [XmlElement("EntityType")]
+        public EntityType EntityType { get; set; }
         [XmlElement("Source")]
         public Source Source { get; set; }
         [MaxLength(30)]
@@ -28,13 +28,13 @@ namespace Middleware.Shared.Messages
         [XmlElement("Name")]
         public string Name { get; set; } = String.Empty;
         [XmlElement("LastName")]
-        public string LastName { get; set; }
+        public string LastName { get; set; } = String.Empty;
         [XmlElement("Email")]
-        public string Email { get; set; }
+        public string Email { get; set; } = String.Empty;
 
         public AttendeeEventMessage() {}
         
-        public AttendeeEventMessage(Resource resource, BookingDto bookingDto, CrudMethod crudMethod, Guid organiserUuid)
+        public AttendeeEventMessage(Resource resource, BookingDto bookingDto, CrudMethod crudMethod)
         {
             UUID_Nr = resource.Uuid.ToString();
             SourceEntityId = resource.SourceEntityId.ToString();
@@ -42,6 +42,9 @@ namespace Middleware.Shared.Messages
             EntityVersion = resource.EntityVersion;
             Source = resource.Source;
             Method = crudMethod;
+            Name = bookingDto.FirstName;
+            LastName = bookingDto.LastName;
+            Email = bookingDto.Email;
         }
     }
 }
