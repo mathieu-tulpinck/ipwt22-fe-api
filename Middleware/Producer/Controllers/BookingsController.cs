@@ -58,7 +58,7 @@ namespace Middleware.Producer.Controllers
             }
 
             if (attendeeMessageSent) {
-                var attendeeSessionResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ATTENDEESESSION, bookingDto.Id, 1);
+                var attendeeSessionResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.SESSIONATTENDEE, bookingDto.Id, 1);
                 var createdAttendeeSessionResource = await _umService.CreateResource(umHttpClient, attendeeSessionResourceToCreate);
                 var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.SESSION, bookingDto.EventId);
                 if (createdAttendeeSessionResource is not null) {

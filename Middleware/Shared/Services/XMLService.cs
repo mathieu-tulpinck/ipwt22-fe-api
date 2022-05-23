@@ -46,7 +46,7 @@ namespace Middleware.Shared.Services
                         return null;
                     }
                 }
-                case EntityType.ATTENDEESESSION: {
+                case EntityType.SESSIONATTENDEE: {
                     var message = new SessionAttendeeEventMessage(resource, dto, crudMethod, (Guid)eventUuid!, (Guid)attendeeUuid!);
                     var xmlSerializer = new XmlSerializer(message.GetType());
                     var xmlMessage = SerializeToXML<SessionAttendeeEventMessage>(message);
