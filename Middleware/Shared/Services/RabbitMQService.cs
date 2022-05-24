@@ -40,7 +40,7 @@ namespace Middleware.Shared.Services
                      _channel.QueueBind(
                     queue: binding.Key.ToString(),
                     exchange: exchangeName.ToString(),
-                    routingKey: binding.Value.ToString()
+                    routingKey: binding.Value.ToString() // Binding key.
                     );
                 }
             }
@@ -62,7 +62,7 @@ namespace Middleware.Shared.Services
                 foreach (var routingKey in routingkeys) {
                     _channel.BasicPublish(
                     exchange: exchangeName.ToString(),
-                    routingKey: routingKey.ToString(),
+                    routingKey: routingKey.ToString(), // Routing key.
                     basicProperties: null,
                     body: body
                     );

@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Middleware.Shared.Models
 {
-    // Use terms of xsd
     public class EventDto
     {
         [Required]

@@ -37,21 +37,26 @@ namespace Middleware.Shared.Messages
         [XmlElement("IsActive")]    
         public bool IsActive { get; set; }
 
-            public SessionEventMessage() {}
-            
-            public SessionEventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid organiserUuid)
-            {
-                UUID_Nr = resource.Uuid.ToString();
-                SourceEntityId = resource.SourceEntityId.ToString();
-                EntityType = resource.EntityType;
-                EntityVersion = resource.EntityVersion;
-                Source = resource.Source;
-                Method = crudMethod;
-                Title = eventDto.Name;
-                StartDateUTC = eventDto.Start;
-                EndDateUTC = eventDto.End;
-                OrganiserUUID = organiserUuid.ToString();
-                IsActive = eventDto.Status;
-            }
+        public SessionEventMessage() {}
+        
+        public SessionEventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid organiserUuid)
+        {
+            UUID_Nr = resource.Uuid.ToString();
+            SourceEntityId = resource.SourceEntityId.ToString();
+            EntityType = resource.EntityType;
+            EntityVersion = resource.EntityVersion;
+            Source = resource.Source;
+            Method = crudMethod;
+            Title = eventDto.Name;
+            StartDateUTC = eventDto.Start;
+            EndDateUTC = eventDto.End;
+            OrganiserUUID = organiserUuid.ToString();
+            IsActive = eventDto.Status;
+        }
+
+        public override string ToString()
+        {
+            return $"{this.UUID_Nr}";
+        }
     }
 }

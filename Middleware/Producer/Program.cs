@@ -1,7 +1,7 @@
-using Serilog;
 using Microsoft.Net.Http.Headers;
 using Middleware.Shared.Services;
 using RabbitMQ.Client;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()

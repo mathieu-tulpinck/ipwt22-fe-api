@@ -30,7 +30,7 @@ namespace Middleware.Producer.Controllers
         public async Task<ActionResult> CreateEvent(EventDto eventDto)
         {
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
-            Guid?organiserUuid = null;
+            Guid? organiserUuid = null;
             // If event owner is not known in UuidMasterApi, create it.
             var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner);
             if (organiserResource is null) {
@@ -48,20 +48,19 @@ namespace Middleware.Producer.Controllers
                 organiserUuid = organiserResource.Uuid;
             }
 
-            var eventResourceToCreate =  new ResourceDto(Source.FRONTEND, EntityType.EVENT, eventDto.Id, 1);
+            var eventResourceToCreate =  new ResourceDto(Source.FRONTEND, EntityType.SESSION, eventDto.Id, 1);
             var createdEventResource = await _umService.CreateResource(umHttpClient, eventResourceToCreate);
             
             // prepare and send rabbitmq message relating to new event.
             if (createdEventResource is not null && organiserUuid is not null) {
                 _logger.LogInformation($"{createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
-                var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, (Guid)organiserUuid!);
+                var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, organiserUuid: (Guid)organiserUuid!);
                 if (message is not null) {
                     _logger.LogInformation("Producer successfully serialized the message.");
                     var bindings = new Dictionary<QueueName, RoutingKey>() {
                         { QueueName.CrmSession, RoutingKey.CrmSession },
                         { QueueName.PlanningSession, RoutingKey.PlanningSession }
                     };
-                    var values = bindings.Values;
                     _rbmqService.ConfigureBroker(ExchangeName.FrontSession, bindings);
                     _rbmqService.PublishMessage(ExchangeName.FrontSession, bindings.Values, message);
                     return NoContent();
@@ -90,7 +89,7 @@ namespace Middleware.Producer.Controllers
             //     _logger.LogInformation((string) field.Value);
             // }
             
-            var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.EVENT, sourceEntityId);
+            var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.SESSION, sourceEntityId);
             if (eventResource is not null) {
                 var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventUpdateDto.Owner);
                 if (organiserResource is not null) {
@@ -98,7 +97,7 @@ namespace Middleware.Producer.Controllers
                     if (response) {
                         _logger.LogInformation($"Event with Uuid {eventResource.Uuid} was updated in UuidMasterApi db.");                    
                         // Send Rabbitmq message relating to updated event.
-                        var message = _xmlService.PreparePayload(eventResource, eventUpdateDto, CrudMethod.UPDATE, organiserResource.Uuid);
+                        var message = _xmlService.PreparePayload(eventResource, eventUpdateDto, CrudMethod.UPDATE, organiserUuid: organiserResource.Uuid);
                         return NoContent();
                     } else {
                         _logger.LogError($"Producer failed to update the resource into the database. {eventResource.EntityType} with SourceEntityId {eventResource.SourceEntityId} was not updated in UuidMasterApi db.");
@@ -109,7 +108,7 @@ namespace Middleware.Producer.Controllers
                     return Problem();
                 }
             } else {
-                _logger.LogError($"Producer failed to update the resource into the database. {EntityType.EVENT} with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db. ");
+                _logger.LogError($"Producer failed to update the resource into the database. {EntityType.SESSION} with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db. ");
                 return Problem();
             }
 

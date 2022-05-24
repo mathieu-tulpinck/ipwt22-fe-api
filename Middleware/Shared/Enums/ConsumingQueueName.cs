@@ -1,6 +1,6 @@
 namespace Middleware.Shared.Enums
 {
-    public enum ExchangeName
+    public enum ConsumingQueueName
     {
         FrontAttendee,
         FrontAttendeeSession,

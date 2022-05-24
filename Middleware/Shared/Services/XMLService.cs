@@ -18,33 +18,55 @@ namespace Middleware.Shared.Services
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
         // dynamic dto is used to accomodate updateDto from patch action.
-        public String? PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod, Guid organiserUuid)
+        public String? PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod, Guid? organiserUuid = null, Guid? eventUuid = null, Guid? attendeeUuid = null)
         {
             switch (resource.EntityType)
             {
-                // attendee
-
-                case EntityType.EVENT:
-                    var message = new SessionEventMessage(resource, dto, crudMethod, organiserUuid);
+                case EntityType.SESSION: {
+                    var message = new SessionEventMessage(resource, dto, crudMethod, (Guid)organiserUuid!);
                
                     var xmlSerializer =  new XmlSerializer(message.GetType());
                     var xmlMessage = SerializeToXML<SessionEventMessage>(message);
-                    _logger.LogInformation(xmlMessage);
-                    if (ValidateXml(xmlMessage)) {
+                    _logger.LogInformation(xmlMessage); // Comment out in prod.
+                    if (ValidateXml(xmlMessage, "SessionEvent_w.xsd")) {
                     return xmlMessage;
                     } else {
                         return null;
-                    }                 
+                    }
+                }
+                case EntityType.ATTENDEE: {
+                    var message = new AttendeeEventMessage(resource, dto, crudMethod);
+                    var xmlSerializer = new XmlSerializer(message.GetType());
+                    var xmlMessage = SerializeToXML<AttendeeEventMessage>(message);
+                    _logger.LogInformation(xmlMessage); // Comment out in prod.
+                    if (ValidateXml(xmlMessage, "AttendeeEvent_w.xsd")) {
+                        return xmlMessage;
+                    } else {
+                        return null;
+                    }
+                }
+                case EntityType.SESSIONATTENDEE: {
+                    var message = new SessionAttendeeEventMessage(resource, dto, crudMethod, (Guid)eventUuid!, (Guid)attendeeUuid!);
+                    var xmlSerializer = new XmlSerializer(message.GetType());
+                    var xmlMessage = SerializeToXML<SessionAttendeeEventMessage>(message);
+                    _logger.LogInformation(xmlMessage); // Comment out in prod.
+                    if (ValidateXml(xmlMessage, "SessionAttendeeEvent_w.xsd")) {
+                        return xmlMessage;
+                    } else {
+                        return null;
+                    }
+                }
                 default:
                     return null;
             }
         }
 
-        private bool ValidateXml(string xmlMessage)
+        public bool ValidateXml(string xmlMessage, string xsdPath)
         {
             bool isValid = true;
-            var path = new Uri(AppContext.BaseDirectory + "XMLSchemas/SessionEvent_w.xsd");
+            var path = new Uri(AppContext.BaseDirectory + "XMLSchemas/" + xsdPath);
             XmlDocument xml = new XmlDocument();
             xml.LoadXml(xmlMessage);
             xml.Schemas.Add(null, path.ToString());
