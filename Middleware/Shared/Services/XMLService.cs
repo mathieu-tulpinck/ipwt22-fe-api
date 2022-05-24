@@ -18,6 +18,7 @@ namespace Middleware.Shared.Services
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
         // dynamic dto is used to accomodate updateDto from patch action.
         public String? PreparePayload(Resource resource, dynamic dto, CrudMethod crudMethod, Guid? organiserUuid = null, Guid? eventUuid = null, Guid? attendeeUuid = null)
         {
@@ -62,7 +63,7 @@ namespace Middleware.Shared.Services
             }
         }
 
-        private bool ValidateXml(string xmlMessage, string xsdPath)
+        public bool ValidateXml(string xmlMessage, string xsdPath)
         {
             bool isValid = true;
             var path = new Uri(AppContext.BaseDirectory + "XMLSchemas/" + xsdPath);

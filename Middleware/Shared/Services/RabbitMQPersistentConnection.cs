@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Middleware.Shared.Enums;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
@@ -11,6 +12,7 @@ namespace Middleware.Shared.Services
         private readonly ILogger<RabbitMQPersistentConnection> _logger;
         private readonly IConnectionFactory _connectionFactory;
         IConnection? _connection;
+        EventBus? _eventBus;
         bool _disposed;
 
         public RabbitMQPersistentConnection(ILogger<RabbitMQPersistentConnection> logger, IConnectionFactory connectionFactory)
@@ -61,6 +63,18 @@ namespace Middleware.Shared.Services
             }
 
             return _connection!.CreateModel();
+        }
+
+        public void CreateConsumerChannel()
+        {
+            if (!IsConnected) {
+                TryConnect();
+            }
+
+            foreach (ConsumingQueueName qn in Enum.GetValues(typeof(ConsumingQueueName))) {
+                _eventBus = new EventBus(this, qn);
+                _eventBus.CreateConsumerChannel();
+            }
         }
 
         public void Disconnect()
