@@ -63,9 +63,8 @@ namespace Middleware.Shared.Services
             Log.Information(xmlMessage);
             switch(Enum.Parse<RoutingKey>(e.RoutingKey)) {
                 case RoutingKey.FrontSession:
-                    Log.Information("case selected");
                     if (_xmlService.ValidateXml(xmlMessage, "SessionEvent_w.xsd")) {
-                        Log.Information("XSD validation passed.");
+                        Log.Information("Deserialized XML message succesfully validated against XSD.");
                         var sessionEventMessage = new SessionEventMessage();
                         _xmlService.DeserializeFromXML<SessionEventMessage>(xmlMessage, out sessionEventMessage);
                     
