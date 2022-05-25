@@ -27,7 +27,8 @@ namespace Middleware.Shared.Services
             using (_channel) {
                 _channel.ExchangeDeclare(
                     exchange: exchangeName.ToString(),
-                    type: "direct"
+                    type: "direct",
+                    durable: true
                 );
                 foreach (var binding in bindings) {
                     _channel.QueueDeclare(
