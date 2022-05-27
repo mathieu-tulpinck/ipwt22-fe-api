@@ -12,11 +12,14 @@ function notify_event($result, $event) {
     $modified = strtotime($post->post_modified_gmt);
     $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
     $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
+    $first_name = get_user_meta($event->event_owner, 'first_name', true);
+    $last_name = get_user_meta($event->event_owner, 'last_name', true);
+    $email = get_userdata($event->event_owner)->user_email;
     // Event created.
     if ($created == $modified && $event->event_status == 1) {
         $status = true;
         $method = 'CREATE';
-        send_event_payload($event, $attributes = [], $event_start, $event_end, $status, $method);
+        send_event_payload($event, $event_start, $event_end, $status, $first_name, $last_name, $email, $method);
     } 
     // Event placed in draft.
     // else if (is_null($event->event_status)) {
@@ -79,7 +82,7 @@ function notify_event($result, $event) {
 //     wp_remote_request("http://producer:5000/api/events/{$event->id}", $args);
 // }
 
-function send_event_payload($event, $attributes, $event_start, $event_end, $status, $method) {
+function send_event_payload($event, $event_start, $event_end, $status, $first_name, $last_name, $email, $method) {
     $headers = array(
         'Content-Type' => 'application/json'
     );
@@ -92,6 +95,9 @@ function send_event_payload($event, $attributes, $event_start, $event_end, $stat
             'name' => $event->event_name, // Title
             'start' => $event_start, // StartDateUTC
             'end' => $event_end, // EndDateUTC
+            'firstName' => $first_name, // FirstName
+            'lastName' => $last_name, // LastName
+            'email' => $email // Email
         );
 
         $body = wp_json_encode($body);
@@ -145,7 +151,7 @@ function notify_booking_created ($count, $booking, $update) {
     $user_data = get_userdata($booking->person_id);
     $attributes['first_name'] = $first_name;
     $attributes['last_name'] = $last_name;
-    $attributes['email'] = $user_data->user_email;;
+    $attributes['email'] = $user_data->user_email;
     
     send_booking_payload($booking->id, $attributes, $method);
 

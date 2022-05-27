@@ -22,7 +22,7 @@ namespace Middleware.Shared.Models
         [MaxLength(50)]
         public string LastName { get; set; } = String.Empty;
         [Required]
-        [MaxLength(50)]
+        [MaxLength(254)]
         public string Email { get; set; } = String.Empty;
 
         public override string ToString()
