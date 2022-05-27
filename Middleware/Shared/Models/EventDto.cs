@@ -22,10 +22,15 @@ namespace Middleware.Shared.Models
         [Required]
         [JsonConverter(typeof(UnixDateTimeConverter))]
         public DateTime End { get; set; }
+        [Required]
+        [MaxLength(50)]
+        public string FirstName { get; set; } = String.Empty;
+        [Required]
+        [MaxLength(50)]
+        public string LastName { get; set; } = String.Empty;
+        [Required]
+        [MaxLength(254)]
+        public string Email { get; set; } = String.Empty;
 
-        public override string ToString()
-        {
-            return $"{this.Id}, {this.Owner}, {this.Status.ToString()}, {this.Name}, {this.Start.ToString()}, {this.End.ToString()}";
-        }
     }
 }

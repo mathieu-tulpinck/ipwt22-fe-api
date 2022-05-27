@@ -30,42 +30,54 @@ namespace Middleware.Producer.Controllers
         public async Task<ActionResult> CreateEvent(EventDto eventDto)
         {
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
-            Guid? organiserUuid = null;
-            // If event owner is not known in UuidMasterApi, create it.
+            Resource? createdOrganiserResource = null;
+            // If event owner is not known in UuidMasterApi, create it. No uuid check given that creation is not caused by incoming message.
             var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner);
             if (organiserResource is null) {
                 var organiserResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner, 1);
-                var createdOrganiserResource = await _umService.CreateResource(umHttpClient, organiserResourceToCreate);
+                createdOrganiserResource = await _umService.CreateResource(umHttpClient, organiserResourceToCreate);
                 if(createdOrganiserResource is not null) {
                     _logger.LogInformation($"{createdOrganiserResource.EntityType} with Uuid {createdOrganiserResource.Uuid} was added to UuidMasterApi db.");
-                    organiserUuid = createdOrganiserResource.Uuid;
                 } else {
                     _logger.LogError($"Producer failed to insert the resource into the database. {organiserResourceToCreate.EntityType} with SourceEntityId {organiserResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
                     return Problem();
                 }
             } else {
                 _logger.LogInformation($"{organiserResource.EntityType} with Uuid {organiserResource.Uuid} already exists in UuidMasterApi db. No action taken.");
-                organiserUuid = organiserResource.Uuid;
+                createdOrganiserResource = organiserResource;
             }
 
+            // No uuid check given that creation is not caused by incoming message.
             var eventResourceToCreate =  new ResourceDto(Source.FRONTEND, EntityType.SESSION, eventDto.Id, 1);
             var createdEventResource = await _umService.CreateResource(umHttpClient, eventResourceToCreate);
             
-            // prepare and send rabbitmq message relating to new event.
-            if (createdEventResource is not null && organiserUuid is not null) {
+            // prepare and send rabbitmq messages relating to new event.
+            if (createdEventResource is not null) {
                 _logger.LogInformation($"{createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
-                var message = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, organiserUuid: (Guid)organiserUuid!);
-                if (message is not null) {
-                    _logger.LogInformation("Producer successfully serialized the message.");
-                    var bindings = new Dictionary<QueueName, RoutingKey>() {
-                        { QueueName.CrmSession, RoutingKey.CrmSession },
-                        { QueueName.PlanningSession, RoutingKey.PlanningSession }
-                    };
-                    _rbmqService.ConfigureBroker(ExchangeName.FrontSession, bindings);
-                    _rbmqService.PublishMessage(ExchangeName.FrontSession, bindings.Values, message);
-                    return NoContent();
+                if(createdOrganiserResource is not null) {
+                    var eventMessage = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, organiserUuid: createdOrganiserResource.Uuid);
+                    var organiserMessage = _xmlService.PreparePayload(createdOrganiserResource, eventDto, CrudMethod.CREATE);
+                    if (eventMessage is not null && organiserMessage is not null) {
+                        _logger.LogInformation("Producer successfully serialized the messages.");
+                        var sessionBindings = new Dictionary<QueueName, RoutingKey>() {
+                            { QueueName.CrmSession, RoutingKey.CrmSession },
+                            { QueueName.PlanningSession, RoutingKey.PlanningSession }
+                        };
+                        _rbmqService.ConfigureBroker(ExchangeName.FrontSession, sessionBindings);
+                        _rbmqService.PublishMessage(ExchangeName.FrontSession, sessionBindings.Values, eventMessage);
+                        
+                        var attendeeBindings = new Dictionary<QueueName, RoutingKey>() {
+                            { QueueName.CrmAttendee, RoutingKey.CrmAttendee },
+                            { QueueName.PlanningAttendee, RoutingKey.PlanningAttendee }
+                        };
+                        _rbmqService.ConfigureBroker(ExchangeName.FrontAttendee, attendeeBindings);
+                        _rbmqService.PublishMessage(ExchangeName.FrontAttendee, attendeeBindings.Values, organiserMessage);
+                        return NoContent();   
+                    }  else {
+                        _logger.LogError($"Producer failed to serialize the messages.");
+                        return Problem();
+                    }
                 } else {
-                    _logger.LogError($"Producer failed to serialize the message. {createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was not sent to the queue.");
                     return Problem();
                 }
             } else {
@@ -111,9 +123,6 @@ namespace Middleware.Producer.Controllers
                 _logger.LogError($"Producer failed to update the resource into the database. {EntityType.SESSION} with SourceEntityId {sourceEntityId} does not exist in UuidMasterApi db. ");
                 return Problem();
             }
-
-            // Relevant for rabbitmq
-
         }
 
         // Delete action not yet implemented.

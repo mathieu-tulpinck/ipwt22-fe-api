@@ -34,7 +34,7 @@ namespace Middleware.Shared.Messages
 
         public AttendeeEventMessage() {}
         
-        public AttendeeEventMessage(Resource resource, BookingDto bookingDto, CrudMethod crudMethod)
+        public AttendeeEventMessage(Resource resource, dynamic dto, CrudMethod crudMethod)
         {
             UUID_Nr = resource.Uuid.ToString();
             SourceEntityId = resource.SourceEntityId.ToString();
@@ -42,9 +42,9 @@ namespace Middleware.Shared.Messages
             EntityVersion = resource.EntityVersion;
             Source = resource.Source;
             Method = crudMethod;
-            Name = bookingDto.FirstName;
-            LastName = bookingDto.LastName;
-            Email = bookingDto.Email;
+            Name = dto.FirstName;
+            LastName = dto.LastName;
+            Email = dto.Email;
         }
     }
 }

@@ -36,6 +36,7 @@ namespace Middleware.Shared.Services
                         return null;
                     }
                 }
+                case EntityType.ORGANISER:
                 case EntityType.ATTENDEE: {
                     var message = new AttendeeEventMessage(resource, dto, crudMethod);
                     var xmlSerializer = new XmlSerializer(message.GetType());
