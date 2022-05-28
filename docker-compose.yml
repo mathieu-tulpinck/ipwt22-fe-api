@@ -76,8 +76,8 @@ services:
       dockerfile: ConsumerDockerfile
     # ports: # replace by expose
     #   - "5004:5000"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+    # environment:
+    #   - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - frontend
       - uuidmasterapi

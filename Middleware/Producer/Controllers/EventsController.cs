@@ -33,6 +33,7 @@ namespace Middleware.Producer.Controllers
             Resource? createdOrganiserResource = null;
             // If event owner is not known in UuidMasterApi, create it. No uuid check given that creation is not caused by incoming message.
             var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner);
+            
             if (organiserResource is null) {
                 var organiserResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner, 1);
                 createdOrganiserResource = await _umService.CreateResource(umHttpClient, organiserResourceToCreate);
@@ -40,6 +41,7 @@ namespace Middleware.Producer.Controllers
                     _logger.LogInformation($"{createdOrganiserResource.EntityType} with Uuid {createdOrganiserResource.Uuid} was added to UuidMasterApi db.");
                 } else {
                     _logger.LogError($"Producer failed to insert the resource into the database. {organiserResourceToCreate.EntityType} with SourceEntityId {organiserResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
+                    
                     return Problem();
                 }
             } else {
@@ -51,37 +53,54 @@ namespace Middleware.Producer.Controllers
             var eventResourceToCreate =  new ResourceDto(Source.FRONTEND, EntityType.SESSION, eventDto.Id, 1);
             var createdEventResource = await _umService.CreateResource(umHttpClient, eventResourceToCreate);
             
+            var random = new System.Random();
+            var attendeeSessionResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.SESSIONATTENDEE, random.Next(), 1);
+            var createdAttendeeSessionResource = await _umService.CreateResource(umHttpClient, attendeeSessionResourceToCreate);
+            
             // prepare and send rabbitmq messages relating to new event.
             if (createdEventResource is not null) {
                 _logger.LogInformation($"{createdEventResource.EntityType} with Uuid {createdEventResource.Uuid} was added to UuidMasterApi db.");
-                if(createdOrganiserResource is not null) {
-                    var eventMessage = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, organiserUuid: createdOrganiserResource.Uuid);
-                    var organiserMessage = _xmlService.PreparePayload(createdOrganiserResource, eventDto, CrudMethod.CREATE);
-                    if (eventMessage is not null && organiserMessage is not null) {
-                        _logger.LogInformation("Producer successfully serialized the messages.");
-                        var sessionBindings = new Dictionary<QueueName, RoutingKey>() {
-                            { QueueName.CrmSession, RoutingKey.CrmSession },
-                            { QueueName.PlanningSession, RoutingKey.PlanningSession }
-                        };
-                        _rbmqService.ConfigureBroker(ExchangeName.FrontSession, sessionBindings);
-                        _rbmqService.PublishMessage(ExchangeName.FrontSession, sessionBindings.Values, eventMessage);
-                        
-                        var attendeeBindings = new Dictionary<QueueName, RoutingKey>() {
-                            { QueueName.CrmAttendee, RoutingKey.CrmAttendee },
-                            { QueueName.PlanningAttendee, RoutingKey.PlanningAttendee }
-                        };
-                        _rbmqService.ConfigureBroker(ExchangeName.FrontAttendee, attendeeBindings);
-                        _rbmqService.PublishMessage(ExchangeName.FrontAttendee, attendeeBindings.Values, organiserMessage);
-                        return NoContent();   
-                    }  else {
-                        _logger.LogError($"Producer failed to serialize the messages.");
+                    if (createdAttendeeSessionResource is not null) {
+                        var eventMessage = _xmlService.PreparePayload(createdEventResource, eventDto, CrudMethod.CREATE, organiserUuid: createdOrganiserResource.Uuid);
+                        var organiserMessage = _xmlService.PreparePayload(createdOrganiserResource, eventDto, CrudMethod.CREATE);
+                        var sessionAttendeeMessage = _xmlService.PreparePayload(createdAttendeeSessionResource, eventDto, CrudMethod.CREATE, eventUuid: createdEventResource.Uuid, attendeeUuid: createdOrganiserResource.Uuid);
+                        if (eventMessage is not null && organiserMessage is not null && sessionAttendeeMessage is not null) {
+                            _logger.LogInformation("Producer successfully serialized the messages.");
+                            var sessionBindings = new Dictionary<QueueName, RoutingKey>() {
+                                { QueueName.CrmSession, RoutingKey.CrmSession },
+                                { QueueName.PlanningSession, RoutingKey.PlanningSession }
+                            };
+                            _rbmqService.ConfigureBroker(ExchangeName.FrontSession, sessionBindings);
+                            _rbmqService.PublishMessage(ExchangeName.FrontSession, sessionBindings.Values, eventMessage);
+                            
+                            var attendeeBindings = new Dictionary<QueueName, RoutingKey>() {
+                                { QueueName.CrmAttendee, RoutingKey.CrmAttendee },
+                                { QueueName.PlanningAttendee, RoutingKey.PlanningAttendee }
+                            };
+                            _rbmqService.ConfigureBroker(ExchangeName.FrontAttendee, attendeeBindings);
+                            _rbmqService.PublishMessage(ExchangeName.FrontAttendee, attendeeBindings.Values, organiserMessage);
+
+                            var sessionAttendeeBindings = new Dictionary<QueueName, RoutingKey>() {
+                                { QueueName.CrmAttendeeSession, RoutingKey.CrmAttendeeSession },
+                                { QueueName.PlanningAttendeeSession, RoutingKey.PlanningAttendeeSession }
+                            };
+                            _rbmqService.ConfigureBroker(ExchangeName.FrontAttendeeSession, sessionAttendeeBindings);
+                            _rbmqService.PublishMessage(ExchangeName.FrontAttendeeSession, sessionAttendeeBindings.Values, sessionAttendeeMessage);
+
+                            return NoContent();   
+                        }  else {
+                            _logger.LogError($"Producer failed to serialize the messages.");
+                            
+                            return Problem();
+                        }
+                    } else {
+                         _logger.LogError($"Producer failed to insert the resource into the database. {attendeeSessionResourceToCreate.EntityType} with SourceEntityId {attendeeSessionResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
+
                         return Problem();
                     }
-                } else {
-                    return Problem();
-                }
             } else {
                 _logger.LogError($"Producer failed to insert the resource into the database. {eventResourceToCreate.EntityType} with SourceEntityId {eventResourceToCreate.SourceEntityId} was not added to UuidMasterApi db.");
+                
                 return Problem();
             }
         }
