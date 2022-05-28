@@ -58,5 +58,18 @@ namespace Middleware.Shared.Messages
                     break;
             }
         }
+
+        public SessionAttendeeEventMessage(Resource resource, EventDto eventDto, CrudMethod crudMethod, Guid eventUuid, Guid attendeeUuid)
+        {
+            UUID_Nr = resource.Uuid.ToString();
+            SourceEntityId = resource.SourceEntityId.ToString();
+            EntityType = resource.EntityType;
+            EntityVersion = resource.EntityVersion;
+            Source = resource.Source;
+            Method = crudMethod;
+            AttendeeUUID = attendeeUuid.ToString();
+            SessionUUID = eventUuid.ToString();
+            InvitationStatus = InvitationStatus.PENDING;
+        }
     }
 }
