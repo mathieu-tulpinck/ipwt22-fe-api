@@ -11,7 +11,7 @@ function notify_event($result, $event) {
     $created  = strtotime($post->post_date_gmt);
     $modified = strtotime($post->post_modified_gmt);
     $event_start = strtotime($event->event_start_date . " " . $event->event_start_time);
-    $event_end = strtotime($event->event_start_date . " " . $event->event_start_time);
+    $event_end = strtotime($event->event_end_date . " " . $event->event_end_time);
     $first_name = get_user_meta($event->event_owner, 'first_name', true);
     $last_name = get_user_meta($event->event_owner, 'last_name', true);
     $email = get_userdata($event->event_owner)->user_email;
