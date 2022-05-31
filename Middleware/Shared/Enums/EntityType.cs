@@ -7,7 +7,6 @@ namespace Middleware.Shared.Enums
     public enum EntityType
     {
         ATTENDEE,
-        ORGANISER,
         SESSION,
         SESSIONATTENDEE
     }

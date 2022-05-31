@@ -32,10 +32,10 @@ namespace Middleware.Producer.Controllers
             var umHttpClient = _httpClientFactory.CreateClient("UuidMasterApi");
             Resource? createdOrganiserResource = null;
             // If event owner is not known in UuidMasterApi, create it. No uuid check given that creation is not caused by incoming message.
-            var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner);
+            var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ATTENDEE, eventDto.Owner);
             
             if (organiserResource is null) {
-                var organiserResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ORGANISER, eventDto.Owner, 1);
+                var organiserResourceToCreate = new ResourceDto(Source.FRONTEND, EntityType.ATTENDEE, eventDto.Owner, 1);
                 createdOrganiserResource = await _umService.CreateResource(umHttpClient, organiserResourceToCreate);
                 if(createdOrganiserResource is not null) {
                     _logger.LogInformation($"{createdOrganiserResource.EntityType} with Uuid {createdOrganiserResource.Uuid} was added to UuidMasterApi db.");
@@ -122,7 +122,7 @@ namespace Middleware.Producer.Controllers
             
             var eventResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.SESSION, sourceEntityId);
             if (eventResource is not null) {
-                var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ORGANISER, eventUpdateDto.Owner);
+                var organiserResource = await _umService.GetResourceQueryString(umHttpClient, Source.FRONTEND, EntityType.ATTENDEE, eventUpdateDto.Owner);
                 if (organiserResource is not null) {
                     var response = await _umService.PatchResource(umHttpClient, eventResource.Uuid, eventResource.EntityVersion);
                     if (response) {
@@ -135,7 +135,7 @@ namespace Middleware.Producer.Controllers
                         return Problem();
                     }
                 } else {
-                    _logger.LogError($"Producer failed to update the resource into the database. {EntityType.ORGANISER} with SourceEntityId {eventUpdateDto.Owner} does not exist in UuidMasterApi db. ");
+                    _logger.LogError($"Producer failed to update the resource into the database. {EntityType.ATTENDEE} with SourceEntityId {eventUpdateDto.Owner} does not exist in UuidMasterApi db. ");
                     return Problem();
                 }
             } else {
